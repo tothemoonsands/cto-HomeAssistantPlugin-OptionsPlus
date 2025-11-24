@@ -1,4 +1,4 @@
-# Loupedeck × Home Assistant Plugin
+# Options Plus × Home Assistant Plugin
 
 Control your Home Assistant lights (and soon, any entity) from your Creative Console with a fast, optimistic UI, debounced actions, and capability-aware controls. Open the **All Light Controls** dynamic folder(only on creative console) to browse **Areas → Lights → Commands** and use the dial for brightness, color temperature, hue, and saturation.
 
