@@ -53,7 +53,7 @@ Control your Home Assistant lights (and soon, any entity) from your Creative Con
    * **Long-Lived Token**: paste from HA Profile
    * Click **Test connection**.
    * If no error appears after click save.
-4. Put any **actions** you want into your layout. See what they do in the explanation helow
+4. Put any **actions** you want into your layout. See what they do in the explanation below
 5. (Optional) You may now delete the Configure Home Assistant action from your layout . The settings persist.
 
 ---
