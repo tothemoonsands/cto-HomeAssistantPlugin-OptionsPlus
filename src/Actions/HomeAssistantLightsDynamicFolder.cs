@@ -1068,11 +1068,6 @@ namespace Loupedeck.HomeAssistantPlugin
 
                     this._ha?.EnsureConnectedAsync(TimeSpan.FromSeconds(AuthTimeoutSeconds), this._cts.Token).GetAwaiter().GetResult();
 
-                    this._level = ViewLevel.Root;
-                    this._currentAreaId = null;
-                    this._currentEntityId = null;
-                    this._inDeviceView = false;
-
 
                     this.ButtonActionNamesChanged();
                     this.EncoderActionNamesChanged();
