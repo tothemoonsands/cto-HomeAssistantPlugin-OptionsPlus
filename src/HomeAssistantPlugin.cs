@@ -7,7 +7,7 @@ namespace Loupedeck.HomeAssistantPlugin
 
     /// <summary>
     /// Main plugin class for Home Assistant integration with Loupedeck devices.
-    /// Provides centralized access to WebSocket client, event listener, and light state management.
+    /// Provides centralized access to WebSocket client, event listener, light state management, and switch state management.
     /// </summary>
     public class HomeAssistantPlugin : Plugin
     {
@@ -51,9 +51,11 @@ namespace Loupedeck.HomeAssistantPlugin
         /// </summary>
         internal LightStateManager LightStateManager { get; } = new();
 
-
-
-
+        /// <summary>
+        /// Gets the switch state manager for tracking and caching switch properties.
+        /// Exposed internally for actions to access the singleton instance.
+        /// </summary>
+        internal SwitchStateManager SwitchStateManager { get; } = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HomeAssistantPlugin"/> class.
@@ -128,7 +130,7 @@ namespace Loupedeck.HomeAssistantPlugin
                 PluginLog.Info("[Plugin] Closing WebSocket client...");
                 _ = this.HaClient.SafeCloseAsync();
 
-                PluginLog.Info("[Plugin] Light state manager will persist - no cleanup needed");
+                PluginLog.Info("[Plugin] Light and switch state managers will persist - no cleanup needed");
 
                 PluginLog.Info("[Plugin] Unload() completed successfully");
             }

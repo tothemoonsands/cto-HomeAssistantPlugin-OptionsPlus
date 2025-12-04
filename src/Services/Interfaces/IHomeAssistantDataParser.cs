@@ -36,6 +36,14 @@ namespace Loupedeck.HomeAssistantPlugin.Services
         List<LightData> ParseLightStates(String statesJson, ParsedRegistryData registryData);
 
         /// <summary>
+        /// Parses switch states from JSON and combines with registry data
+        /// </summary>
+        /// <param name="statesJson">States JSON data</param>
+        /// <param name="registryData">Parsed registry data</param>
+        /// <returns>List of switch data objects</returns>
+        List<SwitchData> ParseSwitchStates(String statesJson, ParsedRegistryData registryData);
+
+        /// <summary>
         /// Processes and logs available services from JSON
         /// </summary>
         /// <param name="servicesJson">Services JSON data</param>

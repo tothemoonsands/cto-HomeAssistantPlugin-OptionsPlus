@@ -76,11 +76,11 @@ public class RegistryServiceTests
     {
         // Arrange
         var parsedData = new ParsedRegistryData(
-            deviceById: new Dictionary<String, (String name, String mf, String model)>(),
-            deviceAreaById: new Dictionary<String, String>(),
-            entityDevice: new Dictionary<String, (String deviceId, String originalName)>(),
-            entityArea: new Dictionary<String, String>(),
-            areaIdToName: new Dictionary<String, String>() // No unassigned area
+            DeviceById: new Dictionary<String, (String name, String mf, String model)>(),
+            DeviceAreaById: new Dictionary<String, String>(),
+            EntityDevice: new Dictionary<String, (String deviceId, String originalName)>(),
+            EntityArea: new Dictionary<String, String>(),
+            AreaIdToName: new Dictionary<String, String>() // No unassigned area
         );
 
         // Act
@@ -99,11 +99,11 @@ public class RegistryServiceTests
         this._registryService.UpdateRegistries(initialData);
         
         var emptyData = new ParsedRegistryData(
-            deviceById: new Dictionary<String, (String name, String mf, String model)>(),
-            deviceAreaById: new Dictionary<String, String>(),
-            entityDevice: new Dictionary<String, (String deviceId, String originalName)>(),
-            entityArea: new Dictionary<String, String>(),
-            areaIdToName: new Dictionary<String, String>()
+            DeviceById: new Dictionary<String, (String name, String mf, String model)>(),
+            DeviceAreaById: new Dictionary<String, String>(),
+            EntityDevice: new Dictionary<String, (String deviceId, String originalName)>(),
+            EntityArea: new Dictionary<String, String>(),
+            AreaIdToName: new Dictionary<String, String>()
         );
 
         // Act
@@ -220,23 +220,23 @@ public class RegistryServiceTests
     {
         // Arrange - Create scenario where entity has direct area that differs from device area
         var testData = new ParsedRegistryData(
-            deviceById: new Dictionary<String, (String name, String mf, String model)>(StringComparer.OrdinalIgnoreCase)
+            DeviceById: new Dictionary<String, (String name, String mf, String model)>(StringComparer.OrdinalIgnoreCase)
             {
                 ["device_test"] = ("Test Device", "ACME", "TD-1")
             },
-            deviceAreaById: new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase)
+            DeviceAreaById: new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase)
             {
                 ["device_test"] = "area_bedroom" // Device in bedroom
             },
-            entityDevice: new Dictionary<String, (String deviceId, String originalName)>(StringComparer.OrdinalIgnoreCase)
+            EntityDevice: new Dictionary<String, (String deviceId, String originalName)>(StringComparer.OrdinalIgnoreCase)
             {
                 ["light.test"] = ("device_test", "Test Light")
             },
-            entityArea: new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase)
+            EntityArea: new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase)
             {
                 ["light.test"] = "area_kitchen" // Entity directly assigned to kitchen
             },
-            areaIdToName: new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase)
+            AreaIdToName: new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase)
             {
                 ["area_bedroom"] = "Bedroom",
                 ["area_kitchen"] = "Kitchen"
@@ -789,7 +789,7 @@ public class RegistryServiceTests
             ["area_kitchen"] = "Kitchen"
         };
 
-        return new ParsedRegistryData(deviceById, deviceAreaById, entityDevice, entityArea, areaIdToName);
+        return new ParsedRegistryData(DeviceById: deviceById, DeviceAreaById: deviceAreaById, EntityDevice: entityDevice, EntityArea: entityArea, AreaIdToName: areaIdToName);
     }
 
     #endregion

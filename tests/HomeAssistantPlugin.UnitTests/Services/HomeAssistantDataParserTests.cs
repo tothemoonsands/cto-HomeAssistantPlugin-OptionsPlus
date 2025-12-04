@@ -26,7 +26,8 @@ public class HomeAssistantDataParserTests
     public HomeAssistantDataParserTests()
     {
         this._mockCapabilityService = Substitute.For<ICapabilityService>();
-        this._parser = new HomeAssistantDataParser(this._mockCapabilityService);
+        var capabilityService = new CapabilityService();
+        this._parser = new HomeAssistantDataParser(capabilityService);
     }
 
     #region Constructor Tests
@@ -35,7 +36,8 @@ public class HomeAssistantDataParserTests
     public void Constructor_WithValidCapabilityService_InitializesSuccessfully()
     {
         // Arrange & Act
-        var parser = new HomeAssistantDataParser(this._mockCapabilityService);
+        var capabilityService = new CapabilityService();
+        var parser = new HomeAssistantDataParser(capabilityService);
 
         // Assert
         parser.Should().NotBeNull();
@@ -103,7 +105,7 @@ public class HomeAssistantDataParserTests
     {
         // Arrange
         var registryData = CreateEmptyRegistryData();
-        var lightCaps = new LightCaps(true, true, false, true);
+        var lightCaps = new Models.LightCaps(true, true, false, true);
         this._mockCapabilityService.ForLight(Arg.Any<JsonElement>()).Returns(lightCaps);
 
         var statesJson = """
@@ -142,7 +144,7 @@ public class HomeAssistantDataParserTests
     {
         // Arrange
         var registryData = CreateEmptyRegistryData();
-        var lightCaps = new LightCaps(true, true, false, true);
+        var lightCaps = new Models.LightCaps(true, true, false, true);
         this._mockCapabilityService.ForLight(Arg.Any<JsonElement>()).Returns(lightCaps);
 
         var statesJson = """
@@ -175,7 +177,7 @@ public class HomeAssistantDataParserTests
     {
         // Arrange
         var registryData = CreateEmptyRegistryData();
-        var lightCaps = new LightCaps(true, true, true, false);
+        var lightCaps = new Models.LightCaps(true, true, true, false);
         this._mockCapabilityService.ForLight(Arg.Any<JsonElement>()).Returns(lightCaps);
 
         var statesJson = """
@@ -211,7 +213,7 @@ public class HomeAssistantDataParserTests
     {
         // Arrange
         var registryData = CreateEmptyRegistryData();
-        var lightCaps = new LightCaps(true, true, true, false);
+        var lightCaps = new Models.LightCaps(true, true, true, false);
         this._mockCapabilityService.ForLight(Arg.Any<JsonElement>()).Returns(lightCaps);
 
         var statesJson = """
@@ -482,20 +484,20 @@ public class HomeAssistantDataParserTests
     {
         // Arrange
         var registryData = new ParsedRegistryData(
-            deviceById: new Dictionary<String, (String name, String mf, String model)>(StringComparer.OrdinalIgnoreCase)
+            DeviceById: new Dictionary<String, (String name, String mf, String model)>(StringComparer.OrdinalIgnoreCase)
             {
                 ["device123"] = ("Smart Bulb Pro", "ACME", "SB-100")
             },
-            deviceAreaById: new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase)
+            DeviceAreaById: new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase)
             {
                 ["device123"] = "area_living_room"
             },
-            entityDevice: new Dictionary<String, (String deviceId, String originalName)>(StringComparer.OrdinalIgnoreCase)
+            EntityDevice: new Dictionary<String, (String deviceId, String originalName)>(StringComparer.OrdinalIgnoreCase)
             {
                 ["light.living_room"] = ("device123", "Living Room Light")
             },
-            entityArea: new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase),
-            areaIdToName: new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase)
+            EntityArea: new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase),
+            AreaIdToName: new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase)
             {
                 ["area_living_room"] = "Living Room"
             }
@@ -534,23 +536,23 @@ public class HomeAssistantDataParserTests
     {
         // Arrange - Entity has direct area assignment that should override device area
         var registryData = new ParsedRegistryData(
-            deviceById: new Dictionary<String, (String name, String mf, String model)>(StringComparer.OrdinalIgnoreCase)
+            DeviceById: new Dictionary<String, (String name, String mf, String model)>(StringComparer.OrdinalIgnoreCase)
             {
                 ["device123"] = ("Test Device", "ACME", "TD-1")
             },
-            deviceAreaById: new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase)
+            DeviceAreaById: new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase)
             {
                 ["device123"] = "area_bedroom" // Device assigned to bedroom
             },
-            entityDevice: new Dictionary<String, (String deviceId, String originalName)>(StringComparer.OrdinalIgnoreCase)
+            EntityDevice: new Dictionary<String, (String deviceId, String originalName)>(StringComparer.OrdinalIgnoreCase)
             {
                 ["light.test"] = ("device123", "Test Light")
             },
-            entityArea: new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase)
+            EntityArea: new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase)
             {
                 ["light.test"] = "area_kitchen" // Entity directly assigned to kitchen - should win
             },
-            areaIdToName: new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase)
+            AreaIdToName: new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase)
             {
                 ["area_bedroom"] = "Bedroom",
                 ["area_kitchen"] = "Kitchen"
@@ -816,12 +818,563 @@ public class HomeAssistantDataParserTests
     private static ParsedRegistryData CreateEmptyRegistryData()
     {
         return new ParsedRegistryData(
-            deviceById: new Dictionary<String, (String name, String mf, String model)>(StringComparer.OrdinalIgnoreCase),
-            deviceAreaById: new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase),
-            entityDevice: new Dictionary<String, (String deviceId, String originalName)>(StringComparer.OrdinalIgnoreCase),
-            entityArea: new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase),
-            areaIdToName: new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase)
+            DeviceById: new Dictionary<String, (String name, String mf, String model)>(StringComparer.OrdinalIgnoreCase),
+            DeviceAreaById: new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase),
+            EntityDevice: new Dictionary<String, (String deviceId, String originalName)>(StringComparer.OrdinalIgnoreCase),
+            EntityArea: new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase),
+            AreaIdToName: new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase)
         );
+    }
+
+    #endregion
+
+    #region ParseSwitchStates Tests - Core Functionality
+
+    [Fact]
+    public void ParseSwitchStates_ValidSwitchJson_ExtractsSwitchData()
+    {
+        // Arrange
+        var registryData = CreateEmptyRegistryData();
+        var switchCaps = new SwitchCaps(true);
+
+        var statesJson = """
+        [
+            {
+                "entity_id": "switch.living_room",
+                "state": "on",
+                "attributes": {
+                    "friendly_name": "Living Room Switch",
+                    "device_class": "switch"
+                }
+            }
+        ]
+        """;
+
+        // Act
+        var result = this._parser.ParseSwitchStates(statesJson, registryData);
+
+        // Assert
+        result.Should().HaveCount(1);
+        var switchEntity = result.First();
+        switchEntity.EntityId.Should().Be("switch.living_room");
+        switchEntity.FriendlyName.Should().Be("Living Room Switch");
+        switchEntity.IsOn.Should().BeTrue();
+        switchEntity.State.Should().Be("on");
+        switchEntity.Capabilities.OnOff.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ParseSwitchStates_SwitchWithOutletDeviceClass_ExtractsSwitchData()
+    {
+        // Arrange
+        var registryData = CreateEmptyRegistryData();
+
+        var statesJson = """
+        [
+            {
+                "entity_id": "switch.smart_outlet",
+                "state": "off",
+                "attributes": {
+                    "friendly_name": "Smart Outlet",
+                    "device_class": "outlet",
+                    "icon": "mdi:power-socket"
+                }
+            }
+        ]
+        """;
+
+        // Act
+        var result = this._parser.ParseSwitchStates(statesJson, registryData);
+
+        // Assert
+        result.Should().HaveCount(1);
+        var switchEntity = result.First();
+        switchEntity.EntityId.Should().Be("switch.smart_outlet");
+        switchEntity.FriendlyName.Should().Be("Smart Outlet");
+        switchEntity.IsOn.Should().BeFalse();
+        switchEntity.State.Should().Be("off");
+        switchEntity.Capabilities.OnOff.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ParseSwitchStates_MultipleSwitches_ExtractsAllSwitchData()
+    {
+        // Arrange
+        var registryData = CreateEmptyRegistryData();
+
+        var statesJson = """
+        [
+            {
+                "entity_id": "switch.living_room",
+                "state": "on",
+                "attributes": {
+                    "friendly_name": "Living Room Switch"
+                }
+            },
+            {
+                "entity_id": "switch.kitchen_outlet",
+                "state": "off",
+                "attributes": {
+                    "friendly_name": "Kitchen Outlet",
+                    "device_class": "outlet"
+                }
+            },
+            {
+                "entity_id": "switch.garden_sprinkler",
+                "state": "on",
+                "attributes": {
+                    "friendly_name": "Garden Sprinkler",
+                    "device_class": "switch"
+                }
+            }
+        ]
+        """;
+
+        // Act
+        var result = this._parser.ParseSwitchStates(statesJson, registryData);
+
+        // Assert
+        result.Should().HaveCount(3);
+        
+        var livingRoomSwitch = result.FirstOrDefault(s => s.EntityId == "switch.living_room");
+        livingRoomSwitch.Should().NotBeNull();
+        livingRoomSwitch!.IsOn.Should().BeTrue();
+        
+        var kitchenOutlet = result.FirstOrDefault(s => s.EntityId == "switch.kitchen_outlet");
+        kitchenOutlet.Should().NotBeNull();
+        kitchenOutlet!.IsOn.Should().BeFalse();
+        
+        var gardenSprinkler = result.FirstOrDefault(s => s.EntityId == "switch.garden_sprinkler");
+        gardenSprinkler.Should().NotBeNull();
+        gardenSprinkler!.IsOn.Should().BeTrue();
+    }
+
+    #endregion
+
+    #region ParseSwitchStates Tests - Edge Cases
+
+    [Fact]
+    public void ParseSwitchStates_NullStatesJson_ThrowsArgumentException()
+    {
+        // Arrange
+        var registryData = CreateEmptyRegistryData();
+
+        // Act & Assert
+        var action = () => this._parser.ParseSwitchStates(null!, registryData);
+        action.Should().Throw<ArgumentException>()
+            .WithMessage("*States JSON cannot be null or empty*");
+    }
+
+    [Fact]
+    public void ParseSwitchStates_EmptyStatesJson_ThrowsArgumentException()
+    {
+        // Arrange
+        var registryData = CreateEmptyRegistryData();
+
+        // Act & Assert
+        var action = () => this._parser.ParseSwitchStates("", registryData);
+        action.Should().Throw<ArgumentException>()
+            .WithMessage("*States JSON cannot be null or empty*");
+    }
+
+    [Fact]
+    public void ParseSwitchStates_MalformedJson_ThrowsException()
+    {
+        // Arrange
+        var registryData = CreateEmptyRegistryData();
+        var malformedJson = """[{"entity_id": "switch.test", "state": "on",}]"""; // Trailing comma
+
+        // Act & Assert
+        var action = () => this._parser.ParseSwitchStates(malformedJson, registryData);
+        action.Should().Throw<Exception>();
+    }
+
+    [Fact]
+    public void ParseSwitchStates_NonSwitchEntities_FiltersOut()
+    {
+        // Arrange
+        var registryData = CreateEmptyRegistryData();
+        
+        var statesJson = """
+        [
+            {"entity_id": "light.test_light", "state": "on"},
+            {"entity_id": "sensor.temperature", "state": "22.5"},
+            {"entity_id": "switch.valid_switch", "state": "off"}
+        ]
+        """;
+
+        // Act
+        var result = this._parser.ParseSwitchStates(statesJson, registryData);
+
+        // Assert
+        result.Should().HaveCount(1);
+        result.First().EntityId.Should().Be("switch.valid_switch");
+    }
+
+    [Fact]
+    public void ParseSwitchStates_SwitchWithoutEntityId_SkipsEntity()
+    {
+        // Arrange
+        var registryData = CreateEmptyRegistryData();
+        
+        var statesJson = """
+        [
+            {"state": "on", "attributes": {"friendly_name": "No Entity ID"}},
+            {"entity_id": "switch.valid", "state": "on"}
+        ]
+        """;
+
+        // Act
+        var result = this._parser.ParseSwitchStates(statesJson, registryData);
+
+        // Assert
+        result.Should().HaveCount(1);
+        result.First().EntityId.Should().Be("switch.valid");
+    }
+
+    [Fact]
+    public void ParseSwitchStates_SwitchWithoutFriendlyName_UseEntityIdAsName()
+    {
+        // Arrange
+        var registryData = CreateEmptyRegistryData();
+
+        var statesJson = """
+        [
+            {
+                "entity_id": "switch.no_name",
+                "state": "on"
+            }
+        ]
+        """;
+
+        // Act
+        var result = this._parser.ParseSwitchStates(statesJson, registryData);
+
+        // Assert
+        result.Should().HaveCount(1);
+        var switchEntity = result.First();
+        switchEntity.FriendlyName.Should().Be("switch.no_name"); // Should fall back to entity ID
+    }
+
+    [Fact]
+    public void ParseSwitchStates_SwitchWithoutAttributes_HandlesGracefully()
+    {
+        // Arrange
+        var registryData = CreateEmptyRegistryData();
+
+        var statesJson = """
+        [
+            {
+                "entity_id": "switch.minimal",
+                "state": "off"
+            }
+        ]
+        """;
+
+        // Act
+        var result = this._parser.ParseSwitchStates(statesJson, registryData);
+
+        // Assert
+        result.Should().HaveCount(1);
+        var switchEntity = result.First();
+        switchEntity.EntityId.Should().Be("switch.minimal");
+        switchEntity.IsOn.Should().BeFalse();
+        switchEntity.Capabilities.OnOff.Should().BeTrue();
+    }
+
+    #endregion
+
+    #region ParseSwitchStates Tests - Registry Integration
+
+    [Fact]
+    public void ParseSwitchStates_WithRegistryData_MapsDeviceAndAreaInformation()
+    {
+        // Arrange
+        var registryData = new ParsedRegistryData(
+            DeviceById: new Dictionary<String, (String name, String mf, String model)>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["device123"] = ("Smart Switch Pro", "ACME", "SS-100")
+            },
+            DeviceAreaById: new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["device123"] = "area_living_room"
+            },
+            EntityDevice: new Dictionary<String, (String deviceId, String originalName)>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["switch.living_room"] = ("device123", "Living Room Switch")
+            },
+            EntityArea: new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase),
+            AreaIdToName: new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["area_living_room"] = "Living Room"
+            }
+        );
+
+        var statesJson = """
+        [
+            {
+                "entity_id": "switch.living_room",
+                "state": "on",
+                "attributes": {
+                    "friendly_name": "Living Room Switch"
+                }
+            }
+        ]
+        """;
+
+        // Act
+        var result = this._parser.ParseSwitchStates(statesJson, registryData);
+
+        // Assert
+        result.Should().HaveCount(1);
+        var switchEntity = result.First();
+        switchEntity.DeviceId.Should().Be("device123");
+        switchEntity.DeviceName.Should().Be("Smart Switch Pro");
+        switchEntity.Manufacturer.Should().Be("ACME");
+        switchEntity.Model.Should().Be("SS-100");
+        switchEntity.AreaId.Should().Be("area_living_room");
+    }
+
+    [Fact]
+    public void ParseSwitchStates_EntityAreaOverridesDeviceArea()
+    {
+        // Arrange - Entity has direct area assignment that should override device area
+        var registryData = new ParsedRegistryData(
+            DeviceById: new Dictionary<String, (String name, String mf, String model)>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["device123"] = ("Test Device", "ACME", "TD-1")
+            },
+            DeviceAreaById: new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["device123"] = "area_bedroom" // Device assigned to bedroom
+            },
+            EntityDevice: new Dictionary<String, (String deviceId, String originalName)>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["switch.test"] = ("device123", "Test Switch")
+            },
+            EntityArea: new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["switch.test"] = "area_kitchen" // Entity directly assigned to kitchen - should win
+            },
+            AreaIdToName: new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["area_bedroom"] = "Bedroom",
+                ["area_kitchen"] = "Kitchen"
+            }
+        );
+
+        var statesJson = """
+        [
+            {
+                "entity_id": "switch.test",
+                "state": "on"
+            }
+        ]
+        """;
+
+        // Act
+        var result = this._parser.ParseSwitchStates(statesJson, registryData);
+
+        // Assert
+        result.Should().HaveCount(1);
+        result.First().AreaId.Should().Be("area_kitchen"); // Entity area should override device area
+    }
+
+    [Fact]
+    public void ParseSwitchStates_NoAreaAssignment_UsesUnassignedArea()
+    {
+        // Arrange
+        var registryData = CreateEmptyRegistryData();
+
+        var statesJson = """
+        [
+            {
+                "entity_id": "switch.orphaned",
+                "state": "on"
+            }
+        ]
+        """;
+
+        // Act
+        var result = this._parser.ParseSwitchStates(statesJson, registryData);
+
+        // Assert
+        result.Should().HaveCount(1);
+        result.First().AreaId.Should().Be("!unassigned");
+    }
+
+    #endregion
+
+    #region ParseSwitchStates Tests - State Handling
+
+    [Theory]
+    [InlineData("on", true)]
+    [InlineData("ON", true)]
+    [InlineData("On", true)]
+    [InlineData("off", false)]
+    [InlineData("OFF", false)]
+    [InlineData("Off", false)]
+    [InlineData("unknown", false)]
+    [InlineData("unavailable", false)]
+    [InlineData("", false)]
+    public void ParseSwitchStates_VariousStates_HandlesCorrectly(String state, Boolean expectedIsOn)
+    {
+        // Arrange
+        var registryData = CreateEmptyRegistryData();
+
+        var statesJson = $$"""
+        [
+            {
+                "entity_id": "switch.state_test",
+                "state": "{{state}}",
+                "attributes": {
+                    "friendly_name": "State Test Switch"
+                }
+            }
+        ]
+        """;
+
+        // Act
+        var result = this._parser.ParseSwitchStates(statesJson, registryData);
+
+        // Assert
+        result.Should().HaveCount(1);
+        var switchEntity = result.First();
+        switchEntity.IsOn.Should().Be(expectedIsOn);
+        switchEntity.State.Should().Be(state);
+    }
+
+    #endregion
+
+    #region ParseSwitchStates Tests - Performance
+
+    [Fact]
+    public void ParseSwitchStates_LargePayload_PerformsReasonably()
+    {
+        // Arrange - Create a large number of switches
+        var registryData = CreateEmptyRegistryData();
+
+        var switchEntities = new List<String>();
+        for (var i = 0; i < 1000; i++)
+        {
+            switchEntities.Add($$"""
+            {
+                "entity_id": "switch.test_{{i}}",
+                "state": "{{(i % 2 == 0 ? "on" : "off")}}",
+                "attributes": {
+                    "friendly_name": "Test Switch {{i}}",
+                    "device_class": "{{(i % 3 == 0 ? "outlet" : "switch")}}"
+                }
+            }
+            """);
+        }
+
+        var statesJson = $"[{String.Join(",", switchEntities)}]";
+
+        // Act & Assert - Should complete without timeout
+        var result = this._parser.ParseSwitchStates(statesJson, registryData);
+        result.Should().HaveCount(1000);
+    }
+
+    #endregion
+
+    #region ParseSwitchStates Tests - Real-world Scenarios
+
+    [Fact]
+    public void ParseSwitchStates_PhilipsHueSmartPlug_ParsesCorrectly()
+    {
+        // Arrange - Typical Philips Hue smart plug
+        var registryData = CreateEmptyRegistryData();
+
+        var statesJson = """
+        [
+            {
+                "entity_id": "switch.hue_smart_plug_1",
+                "state": "on",
+                "attributes": {
+                    "friendly_name": "Hue Smart Plug 1",
+                    "device_class": "outlet",
+                    "supported_features": 0
+                }
+            }
+        ]
+        """;
+
+        // Act
+        var result = this._parser.ParseSwitchStates(statesJson, registryData);
+
+        // Assert
+        result.Should().HaveCount(1);
+        var switchEntity = result.First();
+        switchEntity.EntityId.Should().Be("switch.hue_smart_plug_1");
+        switchEntity.FriendlyName.Should().Be("Hue Smart Plug 1");
+        switchEntity.IsOn.Should().BeTrue();
+        switchEntity.Capabilities.OnOff.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ParseSwitchStates_ShellyRelaySwitch_ParsesCorrectly()
+    {
+        // Arrange - Typical Shelly relay switch
+        var registryData = CreateEmptyRegistryData();
+
+        var statesJson = """
+        [
+            {
+                "entity_id": "switch.shelly_relay_0",
+                "state": "off",
+                "attributes": {
+                    "friendly_name": "Shelly 1 Relay 0",
+                    "device_class": "switch",
+                    "icon": "mdi:electric-switch"
+                }
+            }
+        ]
+        """;
+
+        // Act
+        var result = this._parser.ParseSwitchStates(statesJson, registryData);
+
+        // Assert
+        result.Should().HaveCount(1);
+        var switchEntity = result.First();
+        switchEntity.EntityId.Should().Be("switch.shelly_relay_0");
+        switchEntity.FriendlyName.Should().Be("Shelly 1 Relay 0");
+        switchEntity.IsOn.Should().BeFalse();
+        switchEntity.Capabilities.OnOff.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ParseSwitchStates_ZigbeeWallSwitch_ParsesCorrectly()
+    {
+        // Arrange - Typical Zigbee wall switch
+        var registryData = CreateEmptyRegistryData();
+
+        var statesJson = """
+        [
+            {
+                "entity_id": "switch.bedroom_wall_switch",
+                "state": "on",
+                "attributes": {
+                    "friendly_name": "Bedroom Wall Switch",
+                    "device_class": "switch",
+                    "supported_features": 0,
+                    "attribution": "Data provided by zigbee2mqtt"
+                }
+            }
+        ]
+        """;
+
+        // Act
+        var result = this._parser.ParseSwitchStates(statesJson, registryData);
+
+        // Assert
+        result.Should().HaveCount(1);
+        var switchEntity = result.First();
+        switchEntity.EntityId.Should().Be("switch.bedroom_wall_switch");
+        switchEntity.FriendlyName.Should().Be("Bedroom Wall Switch");
+        switchEntity.IsOn.Should().BeTrue();
+        switchEntity.Capabilities.OnOff.Should().BeTrue();
     }
 
     #endregion

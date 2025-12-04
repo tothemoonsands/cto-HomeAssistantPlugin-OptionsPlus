@@ -62,6 +62,7 @@ namespace Loupedeck.HomeAssistantPlugin
         public event Action<String, Double?, Double?, Int32?>? XyColorChanged;
 
         public event Action<String, Boolean>? ScriptRunningChanged; // (entityId, isRunning)
+        public event Action<String, Boolean>? SwitchStateChanged; // (entityId, isOn)
 
 
 
@@ -377,6 +378,16 @@ namespace Loupedeck.HomeAssistantPlugin
                         if (entityId.StartsWith("script.", StringComparison.OrdinalIgnoreCase) && isOn.HasValue)
                         {
                             ScriptRunningChanged?.Invoke(entityId, isOn.Value);
+                        }
+                    }
+                    catch { /* keep loop alive */ }
+
+                    // NEW: switch state changes
+                    try
+                    {
+                        if (entityId.StartsWith("switch.", StringComparison.OrdinalIgnoreCase) && isOn.HasValue)
+                        {
+                            SwitchStateChanged?.Invoke(entityId, isOn.Value);
                         }
                     }
                     catch { /* keep loop alive */ }

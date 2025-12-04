@@ -36,7 +36,10 @@ public class IconServiceTests
             [IconId.Retry] = "icons/reload_icon.svg",
             [IconId.Issue] = "icons/issue_status_icon.svg",
             [IconId.Online] = "icons/online_status_icon.png",
-            [IconId.RunScript] = "icons/run_script_icon.svg"
+            [IconId.RunScript] = "icons/run_script_icon.svg",
+            [IconId.Switch] = "icons/switch_icon.svg",
+            [IconId.SwitchOn] = "icons/switch_on_icon.svg",
+            [IconId.SwitchOff] = "icons/switch_off_icon.svg"
         };
 
         // BitmapImage mocking removed as it's from Loupedeck SDK

@@ -138,5 +138,8 @@ namespace Loupedeck.HomeAssistantPlugin.Services
         public const String Hue = "hue";
         public const String Area = "area";
         public const String RunScript = "run_script";
+        public const String Switch = "switch";
+        public const String SwitchOn = "switchOn";
+        public const String SwitchOff = "switchOff";
     }
 }

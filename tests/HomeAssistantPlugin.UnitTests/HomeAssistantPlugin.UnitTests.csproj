@@ -38,6 +38,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\HomeAssistantPlugin.csproj" />
+    <Reference Include="PluginApi">
+      <HintPath>C:\Program Files\Logi\LogiPluginService\PluginApi.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>
