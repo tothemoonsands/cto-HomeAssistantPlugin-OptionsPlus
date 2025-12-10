@@ -40,7 +40,7 @@ namespace Loupedeck.HomeAssistantPlugin
         private const Int32 YCoordinateIndex = 1;                      // Array index for Y coordinate in XY color
 
         // --- Buffer Constants ---
-        private const Int32 WebSocketBufferSize = 8192;                // Buffer size for WebSocket receive operations
+        private const Int32 WebSocketBufferSize = 65536;               // Buffer size for WebSocket receive operations (64KB for large HA responses)
 
         private ClientWebSocket? _ws;
         private CancellationTokenSource? _cts;
