@@ -68,16 +68,8 @@ namespace Loupedeck.HomeAssistantPlugin
         /// <param name="width">Requested image width.</param>
         /// <param name="height">Requested image height.</param>
         /// <returns>Bitmap image showing a light bulb icon.</returns>
-        protected override BitmapImage GetCommandImage(ActionEditorActionParameters parameters, Int32 width, Int32 height)
-        {
-            if (parameters.TryGetString(ControlLight, out var entityId) && !String.IsNullOrWhiteSpace(entityId))
-            {
-                // Optionally, show On/Off icon based on cached state (if available)
-                // For simplicity, always show bulb icon
-                return this._icons.Get(IconId.Bulb);
-            }
-            return this._icons.Get(IconId.Bulb);
-        }
+        protected override BitmapImage GetCommandImage(ActionEditorActionParameters parameters, Int32 width, Int32 height) =>
+            this._icons.Get(IconId.Bulb);
 
         /// <summary>
         /// Loads the action and initializes the Home Assistant WebSocket client.
