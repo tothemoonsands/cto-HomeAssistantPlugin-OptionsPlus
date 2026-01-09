@@ -1,8 +1,8 @@
 # Options Plus × Home Assistant Plugin
 
-Control your Home Assistant lights (and soon, any entity) from your Creative Console with a fast, optimistic UI, debounced actions, and capability-aware controls. Open the **All Light Controls** dynamic folder(only on creative console) to browse **Areas → Lights → Commands** and use the dial for brightness, color temperature, hue, and saturation.
+Control your Home Assistant lights and switches from your Creative Console with a fast, optimistic UI, debounced actions, and capability-aware controls. Open the **All Light Controls** dynamic folder(only on creative console) to browse **Areas → Lights → Commands** and use the dial for brightness, color temperature, hue, and saturation.
 
-> **Status**: Beta. For now there is only support for lights. OSS-ready and actively monitoring and fixing issues. The plugin was only tested on the Creative Console with Phillips Wiz lights.
+> **Status**: Beta. Support for lights and switches implemented. OSS-ready and actively monitoring and fixing issues. The plugin was only tested on the Creative Console with Phillips Wiz lights.
 
 ## Need help?
 
@@ -94,7 +94,29 @@ Toggle a single `light.*` on/off via Home Assistant.
 
 **Notes**
 
-* Works with any HA light entity; no variables are used (it’s a pure toggle).
+* Works with any HA light entity; no variables are used (it's a pure toggle).
+* Requires HA **Base URL** and **Long-Lived Token** to be set (see *Configure Home Assistant*).
+
+---
+
+### Toggle Switches
+
+Toggle one or more `switch.*` entities on/off via Home Assistant.
+
+* **Press** → sends `switch.toggle` for the selected switches.
+
+**To configure:**
+
+1. Place **Toggle Switches** on your layout.
+2. In the popup:
+
+   * **Switches**: pick from your `switch.*` entities (the list auto-loads from HA state), or enter additional switch entity IDs in the field below (e.g., `switch.living_room_fan,switch.kitchen_outlet`)
+   * If HA isn't configured/connected yet, you'll see a hint to open plugin settings.
+
+**Notes**
+
+* Works with any HA switch entity; no variables are used (it's a pure toggle).
+* Supports multiple switches simultaneously.
 * Requires HA **Base URL** and **Long-Lived Token** to be set (see *Configure Home Assistant*).
 
 ---
@@ -158,6 +180,30 @@ Area-based light control that automatically discovers and controls all lights in
 
 ---
 
+### Area Toggle Switches
+
+Area-based switch control that automatically discovers and controls all switches in a selected area.
+
+* **Press** → toggles all switches in the selected area.
+
+**To configure:**
+
+1. Place **Area Toggle Switches** on your layout.
+2. In the popup:
+   
+   * **Select Area**: Choose from dropdown showing "Area Name (X switches)" format
+   * Area selection automatically includes all switch entities within that area
+
+**Key Features:**
+
+* **Automatic Switch Discovery**: Finds all switches in selected area automatically
+* **Area-Centric Control**: No need to select individual switches - just pick the area
+* **Simple Toggle Logic**: Clean on/off control for all switches in the area
+
+**Best for**: Controlling entire areas/rooms where you want to toggle all switches together (outlets, fans, etc.).
+
+---
+
 ### All Light Controls (Areas → Lights → Commands)
 
 Browse all lights and control them with capability-aware dials. Only available for the Creative Console or equivalents.
@@ -191,7 +237,39 @@ Browse all lights and control them with capability-aware dials. Only available f
 
 ---
 
+### All Switch Controls (Areas → Switches → Commands)
 
+Browse all switches and control them with simple on/off functionality. Only available for the Creative Console or equivalents.
+
+1. Add **All Switch Controls** to your layout and press it to enter.
+
+2. You'll see:
+
+   * **Back** — navigates up one level (Device → Area → Root → closes).
+   * **Status** — shows ONLINE/ISSUE; press when ISSUE to surface the error in Options+.
+   * **Retry** — reconnects and reloads data from HA.
+   * **Areas** — your HA Areas (plus **(No area)** if some switches aren't assigned).
+
+3. **Pick an Area** → shows all **Switches** in that area.
+
+4. **Pick a Switch** → shows **Commands** for that device:
+
+   * **On / Off** buttons
+
+     * Simple toggle control for the selected switch.
+
+**To configure:**
+
+Simply add the action to your layout - no additional configuration needed.
+
+**Best for:** Quick access to all your switches organized by area, perfect for controlling outlets, fans, and other switch-based devices throughout your home.
+
+**Notes**
+
+* Navigation follows the same pattern as lights: **Back** steps through Device → Area → Root. From Root, Back closes the folder.
+* All switches are automatically discovered from your Home Assistant configuration.
+
+---
 
 ### Home Assistant Permissions
 
@@ -239,6 +317,15 @@ The Long-Lived Token must allow:
 
 * **Resilient WebSocket Integration**
   Authenticated request channel plus an event listener to keep state fresh.
+
+* **Toggle Single Switch (Action)**
+  Simple toggle action for individual switch entities with basic on/off control.
+
+* **Multi-Switch Control (Action)**
+  Control multiple selected switches with simultaneous toggle functionality.
+
+* **Area-Based Switch Control (Action)**
+  Intelligent area control that automatically discovers all switches in a selected area.
 
 
 ---
@@ -306,23 +393,28 @@ The `.lplug4` format is a zip-like package with metadata; it’s registered with
 ```
 src/
   Actions/
+    AreaToggleLightsAction.cs             # Area-based control with individual capability filtering
+    AreaToggleSwitchesAction.cs           # Area-based switch control
+    AdvancedToggleLightsAction.cs         # Multi-light control with capability intersection
     ConfigureHomeAssistantAction.cs
     HomeAssistantLightsDynamicFolder.cs   # Areas → Lights → Commands (refactored)
+    HomeAssistantSwitchesDynamicFolder.cs # Areas → Switches → Commands
     RunScriptAction.cs
     ToggleLightAction.cs                  # Simple individual light toggle
-    AdvancedToggleLightsAction.cs         # Multi-light control with capability intersection
-    AreaToggleLightsAction.cs             # Area-based control with individual capability filtering
+    ToggleSwitchesAction.cs               # Multi-switch toggle control
   Services/
     # Core Services
+    CapabilityService.cs              # capability inference
+    DebouncedSender.cs               # request debouncing
+    HomeAssistantDataParser.cs        # JSON parsing and validation
+    HomeAssistantDataService.cs       # HA API data fetching
+    HueSaturation.cs                 # color space utilities
+    IconService.cs                    # icon loading and caching
     LightControlService.cs            # light control with debouncing
     LightStateManager.cs              # centralized state management
-    HomeAssistantDataService.cs       # HA API data fetching
-    HomeAssistantDataParser.cs        # JSON parsing and validation
     RegistryService.cs                # device/entity/area registry
-    CapabilityService.cs              # capability inference
-    IconService.cs                    # icon loading and caching
-    DebouncedSender.cs               # request debouncing
-    HueSaturation.cs                 # color space utilities
+    SwitchControlService.cs           # switch control with debouncing
+    SwitchStateManager.cs             # centralized switch state management
     # Command Pattern Architecture (NEW)
     AdjustmentCommandContext.cs       # shared command dependencies
     AdjustmentCommandFactory.cs       # command factory
@@ -341,6 +433,8 @@ src/
     LightCaps.cs                     # light capability model
     LightData.cs                     # light entity data
     ParsedRegistryData.cs            # registry data structures
+    SwitchCaps.cs                    # switch capability model
+    SwitchData.cs                    # switch entity data
   Util/
     ColorTemp.cs                     # color temperature conversions
     JsonExt.cs                       # JSON utilities
@@ -525,7 +619,7 @@ Validates external integration points and data processing:
 
 ## Roadmap
 
-* **Generalize beyond lights** (switch, fan, climate, cover, scene)
+* **Generalize beyond lights and switches** (fan, climate, cover, scene)
 * **Other useful actions** beyond all the controls for a device (for ex toggle one light or a group)
 * **Marketplace release**
 
