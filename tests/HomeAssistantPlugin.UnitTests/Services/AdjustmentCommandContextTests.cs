@@ -6,7 +6,7 @@ using Loupedeck.HomeAssistantPlugin.Services;
 using Loupedeck.HomeAssistantPlugin.Models;
 using Loupedeck.HomeAssistantPlugin;
 
-namespace HomeAssistantPlugin.UnitTests.Services
+namespace Loupedeck.HomeAssistantPlugin.Tests.Services
 {
     /// <summary>
     /// Unit tests for AdjustmentCommandContext with 100% coverage target

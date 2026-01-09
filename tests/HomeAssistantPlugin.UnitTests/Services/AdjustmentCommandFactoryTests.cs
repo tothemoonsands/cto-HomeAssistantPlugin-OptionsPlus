@@ -7,7 +7,7 @@ using Loupedeck.HomeAssistantPlugin.Services.Commands;
 using Loupedeck.HomeAssistantPlugin.Models;
 using Loupedeck.HomeAssistantPlugin;
 
-namespace HomeAssistantPlugin.UnitTests.Services
+namespace Loupedeck.HomeAssistantPlugin.Tests.Services
 {
     /// <summary>
     /// Unit tests for AdjustmentCommandFactory with 100% coverage target

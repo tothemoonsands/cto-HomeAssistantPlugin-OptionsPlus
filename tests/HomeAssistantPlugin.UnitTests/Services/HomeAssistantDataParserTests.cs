@@ -12,7 +12,7 @@ using NSubstitute;
 
 using Xunit;
 
-namespace HomeAssistantPlugin.UnitTests.Services;
+namespace Loupedeck.HomeAssistantPlugin.Tests.Services;
 
 /// <summary>
 /// Comprehensive tests for HomeAssistantDataParser focusing on JSON parsing robustness,
@@ -105,7 +105,7 @@ public class HomeAssistantDataParserTests
     {
         // Arrange
         var registryData = CreateEmptyRegistryData();
-        var lightCaps = new Models.LightCaps(true, true, false, true);
+        var lightCaps = new Loupedeck.HomeAssistantPlugin.LightCaps(true, true, false, true);
         this._mockCapabilityService.ForLight(Arg.Any<JsonElement>()).Returns(lightCaps);
 
         var statesJson = """
@@ -144,7 +144,7 @@ public class HomeAssistantDataParserTests
     {
         // Arrange
         var registryData = CreateEmptyRegistryData();
-        var lightCaps = new Models.LightCaps(true, true, false, true);
+        var lightCaps = new Loupedeck.HomeAssistantPlugin.LightCaps(true, true, false, true);
         this._mockCapabilityService.ForLight(Arg.Any<JsonElement>()).Returns(lightCaps);
 
         var statesJson = """
@@ -177,7 +177,7 @@ public class HomeAssistantDataParserTests
     {
         // Arrange
         var registryData = CreateEmptyRegistryData();
-        var lightCaps = new Models.LightCaps(true, true, true, false);
+        var lightCaps = new Loupedeck.HomeAssistantPlugin.LightCaps(true, true, true, false);
         this._mockCapabilityService.ForLight(Arg.Any<JsonElement>()).Returns(lightCaps);
 
         var statesJson = """
@@ -213,7 +213,7 @@ public class HomeAssistantDataParserTests
     {
         // Arrange
         var registryData = CreateEmptyRegistryData();
-        var lightCaps = new Models.LightCaps(true, true, true, false);
+        var lightCaps = new Loupedeck.HomeAssistantPlugin.LightCaps(true, true, true, false);
         this._mockCapabilityService.ForLight(Arg.Any<JsonElement>()).Returns(lightCaps);
 
         var statesJson = """
@@ -327,7 +327,7 @@ public class HomeAssistantDataParserTests
     {
         // Arrange
         var registryData = CreateEmptyRegistryData();
-        var lightCaps = new LightCaps(true, false, false, false);
+        var lightCaps = new Loupedeck.HomeAssistantPlugin.LightCaps(true, false, false, false);
         this._mockCapabilityService.ForLight(Arg.Any<JsonElement>()).Returns(lightCaps);
 
         var statesJson = """
@@ -354,7 +354,7 @@ public class HomeAssistantDataParserTests
     {
         // Arrange
         var registryData = CreateEmptyRegistryData();
-        var lightCaps = new LightCaps(true, false, false, false);
+        var lightCaps = new Loupedeck.HomeAssistantPlugin.LightCaps(true, false, false, false);
         this._mockCapabilityService.ForLight(Arg.Any<JsonElement>()).Returns(lightCaps);
 
         var statesJson = """
@@ -386,7 +386,7 @@ public class HomeAssistantDataParserTests
     {
         // Arrange
         var registryData = CreateEmptyRegistryData();
-        var lightCaps = new LightCaps(true, true, false, false);
+        var lightCaps = new Loupedeck.HomeAssistantPlugin.LightCaps(true, true, false, false);
         this._mockCapabilityService.ForLight(Arg.Any<JsonElement>()).Returns(lightCaps);
 
         var statesJson = $$"""
@@ -419,7 +419,7 @@ public class HomeAssistantDataParserTests
     {
         // Arrange
         var registryData = CreateEmptyRegistryData();
-        var lightCaps = new LightCaps(true, true, false, true);
+        var lightCaps = new Loupedeck.HomeAssistantPlugin.LightCaps(true, true, false, true);
         this._mockCapabilityService.ForLight(Arg.Any<JsonElement>()).Returns(lightCaps);
 
         var statesJson = $$"""
@@ -452,7 +452,7 @@ public class HomeAssistantDataParserTests
     {
         // Arrange
         var registryData = CreateEmptyRegistryData();
-        var lightCaps = new LightCaps(true, true, false, true);
+        var lightCaps = new Loupedeck.HomeAssistantPlugin.LightCaps(true, true, false, true);
         this._mockCapabilityService.ForLight(Arg.Any<JsonElement>()).Returns(lightCaps);
 
         var statesJson = $$"""
@@ -503,7 +503,7 @@ public class HomeAssistantDataParserTests
             }
         );
 
-        var lightCaps = new LightCaps(true, true, false, true);
+        var lightCaps = new Loupedeck.HomeAssistantPlugin.LightCaps(true, true, false, true);
         this._mockCapabilityService.ForLight(Arg.Any<JsonElement>()).Returns(lightCaps);
 
         var statesJson = """
@@ -559,7 +559,7 @@ public class HomeAssistantDataParserTests
             }
         );
 
-        var lightCaps = new LightCaps(true, false, false, false);
+        var lightCaps = new Loupedeck.HomeAssistantPlugin.LightCaps(true, false, false, false);
         this._mockCapabilityService.ForLight(Arg.Any<JsonElement>()).Returns(lightCaps);
 
         var statesJson = """
@@ -584,7 +584,7 @@ public class HomeAssistantDataParserTests
     {
         // Arrange
         var registryData = CreateEmptyRegistryData();
-        var lightCaps = new LightCaps(true, false, false, false);
+        var lightCaps = new Loupedeck.HomeAssistantPlugin.LightCaps(true, false, false, false);
         this._mockCapabilityService.ForLight(Arg.Any<JsonElement>()).Returns(lightCaps);
 
         var statesJson = """
@@ -785,7 +785,7 @@ public class HomeAssistantDataParserTests
     {
         // Arrange - Create a large number of lights
         var registryData = CreateEmptyRegistryData();
-        var lightCaps = new LightCaps(true, true, false, true);
+        var lightCaps = new Loupedeck.HomeAssistantPlugin.LightCaps(true, true, false, true);
         this._mockCapabilityService.ForLight(Arg.Any<JsonElement>()).Returns(lightCaps);
 
         var lightEntities = new List<String>();
@@ -835,7 +835,7 @@ public class HomeAssistantDataParserTests
     {
         // Arrange
         var registryData = CreateEmptyRegistryData();
-        var switchCaps = new SwitchCaps(true);
+        var switchCaps = new Loupedeck.HomeAssistantPlugin.Models.SwitchCaps(true);
 
         var statesJson = """
         [

@@ -12,7 +12,7 @@ using NSubstitute;
 
 using Xunit;
 
-namespace HomeAssistantPlugin.UnitTests.Services;
+namespace Loupedeck.HomeAssistantPlugin.Tests.Services;
 
 /// <summary>
 /// Comprehensive tests for LightControlService focusing on light control coordination,
@@ -336,7 +336,7 @@ public class LightControlServiceTests : IDisposable
 
         this._mockHaClient.CallServiceAsync(Arg.Any<String>(), Arg.Any<String>(), Arg.Any<String>(),
             Arg.Any<JsonElement?>(), Arg.Any<CancellationToken>())
-            .Returns(callInfo => throw new OperationCanceledException());
+            .Returns<Task<(bool, string?)>>(callInfo => throw new OperationCanceledException());
 
         // Act
         var result = await this._service.TurnOnAsync(entityId, ct: cts.Token);
@@ -462,7 +462,7 @@ public class LightControlServiceTests : IDisposable
         var entityId = "light.test";
         this._mockHaClient.CallServiceAsync(Arg.Any<String>(), Arg.Any<String>(), Arg.Any<String>(),
             Arg.Any<JsonElement?>(), Arg.Any<CancellationToken>())
-            .Returns(callInfo => throw new InvalidOperationException("Test exception"));
+            .Returns<Task<(bool, string?)>>(callInfo => throw new InvalidOperationException("Test exception"));
 
         // Act & Assert - Should not propagate exceptions
         var result1 = await this._service.TurnOnAsync(entityId);

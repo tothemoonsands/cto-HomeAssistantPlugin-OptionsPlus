@@ -9,7 +9,7 @@ using Loupedeck.HomeAssistantPlugin.Services;
 
 using Xunit;
 
-namespace HomeAssistantPlugin.UnitTests.Services;
+namespace Loupedeck.HomeAssistantPlugin.Tests.Services;
 
 /// <summary>
 /// Comprehensive tests for RegistryService focusing on device/entity/area mapping logic,

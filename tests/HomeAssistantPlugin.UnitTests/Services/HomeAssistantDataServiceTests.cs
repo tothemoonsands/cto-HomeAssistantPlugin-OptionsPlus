@@ -10,7 +10,7 @@ using NSubstitute;
 
 using Xunit;
 
-namespace HomeAssistantPlugin.UnitTests.Services;
+namespace Loupedeck.HomeAssistantPlugin.Tests.Services;
 
 /// <summary>
 /// Comprehensive tests for HomeAssistantDataService focusing on API communication wrapper,
@@ -116,7 +116,7 @@ public class HomeAssistantDataServiceTests
     {
         // Arrange
         this._mockHaClient.EnsureConnectedAsync(Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
-            .Returns(callInfo => throw new InvalidOperationException("Connection error"));
+            .Returns<Task<bool>>(callInfo => throw new InvalidOperationException("Connection error"));
 
         // Act
         var (success, json, error) = await this._dataService.FetchStatesAsync(CancellationToken.None);
@@ -135,7 +135,7 @@ public class HomeAssistantDataServiceTests
         cts.Cancel();
 
         this._mockHaClient.EnsureConnectedAsync(Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
-            .Returns(callInfo => throw new OperationCanceledException());
+            .Returns<Task<bool>>(callInfo => throw new OperationCanceledException());
 
         // Act
         var (success, json, error) = await this._dataService.FetchStatesAsync(cts.Token);
@@ -151,7 +151,7 @@ public class HomeAssistantDataServiceTests
     {
         // Arrange
         this._mockHaClient.EnsureConnectedAsync(Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
-            .Returns(callInfo => throw new TimeoutException("Connection timeout"));
+            .Returns<Task<bool>>(callInfo => throw new TimeoutException("Connection timeout"));
 
         // Act
         var (success, json, error) = await this._dataService.FetchStatesAsync(CancellationToken.None);
@@ -495,7 +495,7 @@ public class HomeAssistantDataServiceTests
         this._mockHaClient.EnsureConnectedAsync(Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
             .Returns(true);
         this._mockHaClient.RequestAsync(Arg.Any<String>(), Arg.Any<CancellationToken>())
-            .Returns(callInfo => throw new System.Net.NetworkInformation.NetworkInformationException());
+            .Returns<Task<(bool, string?, string?)>>(callInfo => throw new System.Net.NetworkInformation.NetworkInformationException());
 
         // Act
         var (success1, _, error1) = await this._dataService.FetchStatesAsync(CancellationToken.None);

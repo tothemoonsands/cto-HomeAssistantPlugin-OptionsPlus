@@ -9,7 +9,7 @@ using NSubstitute;
 
 using Xunit;
 
-namespace HomeAssistantPlugin.UnitTests.Services;
+namespace Loupedeck.HomeAssistantPlugin.Tests.Services;
 
 /// <summary>
 /// Comprehensive tests for IconService focusing on icon loading, caching mechanisms,

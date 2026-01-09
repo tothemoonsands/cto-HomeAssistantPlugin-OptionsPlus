@@ -8,7 +8,7 @@ using Loupedeck.HomeAssistantPlugin.Services;
 using Loupedeck.HomeAssistantPlugin.Services.Commands;
 using Loupedeck.HomeAssistantPlugin.Models;
 
-namespace HomeAssistantPlugin.UnitTests.Services.Commands
+namespace Loupedeck.HomeAssistantPlugin.Tests.Services.Commands
 {
     /// <summary>
     /// Unit tests for BrightnessAdjustmentCommand with 100% coverage target

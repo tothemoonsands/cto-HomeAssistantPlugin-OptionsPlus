@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Xunit;
 using Loupedeck.HomeAssistantPlugin.Services;
 
-namespace HomeAssistantPlugin.UnitTests.Services
+namespace Loupedeck.HomeAssistantPlugin.Tests.Services
 {
     /// <summary>
     /// Unit tests for DebouncedSender with 100% coverage target

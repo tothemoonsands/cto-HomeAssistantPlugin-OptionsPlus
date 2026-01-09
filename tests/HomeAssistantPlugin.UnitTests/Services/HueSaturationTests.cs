@@ -6,7 +6,7 @@ using Loupedeck.HomeAssistantPlugin;
 
 using Xunit;
 
-namespace HomeAssistantPlugin.UnitTests.Services;
+namespace Loupedeck.HomeAssistantPlugin.Tests.Services;
 
 /// <summary>
 /// Comprehensive tests for HueSaturation record struct focusing on color space service integration,

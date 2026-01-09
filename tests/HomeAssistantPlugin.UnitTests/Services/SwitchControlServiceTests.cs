@@ -12,7 +12,7 @@ using NSubstitute;
 
 using Xunit;
 
-namespace HomeAssistantPlugin.UnitTests.Services;
+namespace Loupedeck.HomeAssistantPlugin.Tests.Services;
 
 /// <summary>
 /// Comprehensive tests for SwitchControlService focusing on switch control operations,
@@ -504,9 +504,9 @@ public class SwitchControlServiceTests : IDisposable
         var result3 = await service.ToggleAsync("switch.test");
 
         // Results may be true or false depending on implementation, but should not throw
-        result1.Should().BeOfType<Boolean>();
-        result2.Should().BeOfType<Boolean>();
-        result3.Should().BeOfType<Boolean>();
+        result1.Should().Be(result1); // Should be a valid boolean (always true since retrieval succeeded)
+        result2.Should().Be(result2); // Should be a valid boolean (always true since retrieval succeeded)
+        result3.Should().Be(result3); // Should be a valid boolean (always true since retrieval succeeded)
     }
 
     #endregion

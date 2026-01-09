@@ -13,7 +13,7 @@ using NSubstitute;
 
 using Xunit;
 
-namespace HomeAssistantPlugin.UnitTests.Services;
+namespace Loupedeck.HomeAssistantPlugin.Tests.Services;
 
 /// <summary>
 /// Comprehensive tests for LightStateManager focusing on state caching, thread safety,
@@ -689,7 +689,7 @@ public class LightStateManagerTests
     {
         // Arrange
         this._mockDataService.FetchStatesAsync(Arg.Any<CancellationToken>())
-            .Returns(callInfo => throw new InvalidOperationException("Test exception"));
+            .Returns<Task<(bool, string?, string?)>>(callInfo => throw new InvalidOperationException("Test exception"));
 
         // Act
         var (success, error) = await this._stateManager.InitOrUpdateAsync(this._mockDataService, this._mockDataParser);
@@ -707,7 +707,7 @@ public class LightStateManagerTests
         cts.Cancel();
 
         this._mockDataService.FetchStatesAsync(Arg.Any<CancellationToken>())
-            .Returns(callInfo => throw new OperationCanceledException());
+            .Returns<Task<(bool, string?, string?)>>(callInfo => throw new OperationCanceledException());
 
         // Act
         var (success, error) = await this._stateManager.InitOrUpdateAsync(this._mockDataService, this._mockDataParser, cts.Token);

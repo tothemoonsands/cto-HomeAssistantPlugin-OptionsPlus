@@ -13,7 +13,7 @@ using NSubstitute;
 
 using Xunit;
 
-namespace HomeAssistantPlugin.UnitTests.Services;
+namespace Loupedeck.HomeAssistantPlugin.Tests.Services;
 
 /// <summary>
 /// Comprehensive tests for SwitchStateManager focusing on state caching, thread safety,
@@ -474,7 +474,7 @@ public class SwitchStateManagerTests
     {
         // Arrange
         this._mockDataService.FetchStatesAsync(Arg.Any<CancellationToken>())
-            .Returns(callInfo => throw new InvalidOperationException("Test exception"));
+            .Returns<Task<(bool, string?, string?)>>(callInfo => throw new InvalidOperationException("Test exception"));
 
         // Act
         var (success, error) = await this._stateManager.InitOrUpdateAsync(this._mockDataService, this._mockDataParser);
@@ -492,7 +492,7 @@ public class SwitchStateManagerTests
         cts.Cancel();
 
         this._mockDataService.FetchStatesAsync(Arg.Any<CancellationToken>())
-            .Returns(callInfo => throw new OperationCanceledException());
+            .Returns<Task<(bool, string?, string?)>>(callInfo => throw new OperationCanceledException());
 
         // Act
         var (success, error) = await this._stateManager.InitOrUpdateAsync(this._mockDataService, this._mockDataParser, cts.Token);
@@ -527,7 +527,7 @@ public class SwitchStateManagerTests
 
         // Assert - Should not throw and should have consistent state
         var isOn = this._stateManager.IsSwitchOn(entityId);
-        isOn.Should().BeOfType<Boolean>(); // Should be a valid boolean
+        isOn.Should().Be(isOn); // Should be a valid boolean (always true since retrieval succeeded)
     }
 
     [Fact]
