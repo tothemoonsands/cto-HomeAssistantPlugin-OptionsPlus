@@ -398,3 +398,6 @@ FodyWeavers.xsd
 *.sln.iml
 
 .DS_Store
+
+# Loupedeck plugin package files
+*.lplug4
