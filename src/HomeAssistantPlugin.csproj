@@ -94,6 +94,12 @@
     <EmbeddedResource Include="Resources\icons\switch_off_icon.svg">
       <LogicalName>switch_off_icon.svg</LogicalName>
     </EmbeddedResource>
+    <EmbeddedResource Include="Resources\icons\area_switch_icon.svg">
+      <LogicalName>area_switch_icon.svg</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\icons\multiple_switches_icon.svg">
+      <LogicalName>multiple_switches_icon.svg</LogicalName>
+    </EmbeddedResource>
     
     <Reference Include="PluginApi">
       <HintPath>$(PluginApiDir)PluginApi.dll</HintPath>

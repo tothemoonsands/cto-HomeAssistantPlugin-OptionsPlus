@@ -107,7 +107,7 @@ namespace Loupedeck.HomeAssistantPlugin
 
             this._icons = new IconService(new Dictionary<String, String>
             {
-                { IconId.Area, "area_icon.svg" }
+                { IconId.Area, "area_switch_icon.svg" }
             });
 
             PluginLog.Info($"{LogPrefix} Constructor completed - dependency initialization deferred to OnLoad()");
