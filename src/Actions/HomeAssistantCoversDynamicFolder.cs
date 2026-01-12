@@ -119,6 +119,55 @@ namespace Loupedeck.HomeAssistantPlugin
         public override PluginDynamicFolderNavigation GetNavigationArea(DeviceType _) =>
             PluginDynamicFolderNavigation.None;
 
+        public override String GetButtonDisplayName(PluginImageSize imageSize)
+        {
+            // Handle case where CoverStateManager isn't initialized yet
+            if (this._coverStateManager == null)
+            {
+                return "Covers";
+            }
+
+            try
+            {
+                var coverCount = this._coverStateManager.GetTrackedEntityIds().Count();
+                
+                if (coverCount == 0)
+                {
+                    return "No Covers";
+                }
+                
+                return $"Covers ({coverCount})";
+            }
+            catch (Exception ex)
+            {
+                PluginLog.Warning(ex, "[GetButtonDisplayName] Failed to get cover count");
+                return "Covers";
+            }
+        }
+
+        public override BitmapImage GetButtonImage(PluginImageSize imageSize)
+        {
+            try
+            {
+                // Use switch icon as a placeholder for covers until a dedicated cover icon is available
+                return PluginResources.ReadImage("switch_icon.svg");
+            }
+            catch (Exception ex)
+            {
+                PluginLog.Warning(ex, "[GetButtonImage] Failed to load switch_icon.svg");
+                // Return a fallback image if the primary icon fails to load
+                try
+                {
+                    return PluginResources.ReadImage("area_icon.svg");
+                }
+                catch (Exception fallbackEx)
+                {
+                    PluginLog.Error(fallbackEx, "[GetButtonImage] Failed to load fallback area_icon.svg");
+                    throw; // Let the framework handle the final failure
+                }
+            }
+        }
+
         public override IEnumerable<String> GetButtonPressActionNames(DeviceType _)
         {
             // Always show Back + Status

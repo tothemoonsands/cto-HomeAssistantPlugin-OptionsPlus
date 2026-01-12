@@ -118,6 +118,55 @@ namespace Loupedeck.HomeAssistantPlugin
         public override PluginDynamicFolderNavigation GetNavigationArea(DeviceType _) =>
             PluginDynamicFolderNavigation.None;
 
+        public override String GetButtonDisplayName(PluginImageSize imageSize)
+        {
+            // Handle case where SwitchStateManager isn't initialized yet
+            if (this._switchStateManager == null)
+            {
+                return "Switches";
+            }
+
+            try
+            {
+                var switchCount = this._switchStateManager.GetTrackedEntityIds().Count();
+                
+                if (switchCount == 0)
+                {
+                    return "No Switches";
+                }
+                
+                return $"Switches ({switchCount})";
+            }
+            catch (Exception ex)
+            {
+                PluginLog.Warning(ex, "[GetButtonDisplayName] Failed to get switch count");
+                return "Switches";
+            }
+        }
+
+        public override BitmapImage GetButtonImage(PluginImageSize imageSize)
+        {
+            try
+            {
+                // Use switch_icon as the primary icon for switches
+                return PluginResources.ReadImage("switch_icon.svg");
+            }
+            catch (Exception ex)
+            {
+                PluginLog.Warning(ex, "[GetButtonImage] Failed to load switch_icon.svg");
+                // Return a fallback image if the primary icon fails to load
+                try
+                {
+                    return PluginResources.ReadImage("switch_off_icon.svg");
+                }
+                catch (Exception fallbackEx)
+                {
+                    PluginLog.Error(fallbackEx, "[GetButtonImage] Failed to load fallback switch_off_icon.svg");
+                    throw; // Let the framework handle the final failure
+                }
+            }
+        }
+
         public override IEnumerable<String> GetButtonPressActionNames(DeviceType _)
         {
             // Always show Back + Status

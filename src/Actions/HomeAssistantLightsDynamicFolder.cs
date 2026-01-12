@@ -482,6 +482,99 @@ namespace Loupedeck.HomeAssistantPlugin
         public override PluginDynamicFolderNavigation GetNavigationArea(DeviceType _) =>
             PluginDynamicFolderNavigation.None;
 
+        public override String GetButtonDisplayName(PluginImageSize imageSize)
+        {
+            try
+            {
+                // Handle case where LightStateManager isn't initialized yet
+                if (this._lightStateManager == null)
+                {
+                    PluginLog.Debug("[GetButtonDisplayName] LightStateManager is null, returning default text");
+                    return "Lights";
+                }
+
+                // Get tracked entity IDs with additional null safety
+                var trackedEntityIds = this._lightStateManager.GetTrackedEntityIds();
+                if (trackedEntityIds == null)
+                {
+                    PluginLog.Warning("[GetButtonDisplayName] GetTrackedEntityIds() returned null");
+                    return "Lights";
+                }
+
+                var lightCount = trackedEntityIds.Count();
+                PluginLog.Verbose(() => $"[GetButtonDisplayName] Found {lightCount} lights");
+                
+                if (lightCount == 0)
+                {
+                    return "No Lights";
+                }
+                
+                return $"Lights ({lightCount})";
+            }
+            catch (Exception ex)
+            {
+                PluginLog.Error(ex, "[GetButtonDisplayName] Unexpected exception occurred");
+                return "Lights";
+            }
+        }
+
+        public override BitmapImage GetButtonImage(PluginImageSize imageSize)
+        {
+            try
+            {
+                // Use light_bulb_icon as the primary icon for lights
+                PluginLog.Verbose("[GetButtonImage] Loading primary icon: light_bulb_icon.svg");
+                var primaryImage = PluginResources.ReadImage("light_bulb_icon.svg");
+                PluginLog.Verbose("[GetButtonImage] Successfully loaded light_bulb_icon.svg");
+                return primaryImage;
+            }
+            catch (Exception ex)
+            {
+                PluginLog.Warning(ex, "[GetButtonImage] Failed to load primary icon light_bulb_icon.svg");
+                
+                // Try first fallback: light_off_icon.svg
+                try
+                {
+                    PluginLog.Verbose("[GetButtonImage] Loading fallback icon: light_off_icon.svg");
+                    var fallbackImage = PluginResources.ReadImage("light_off_icon.svg");
+                    PluginLog.Verbose("[GetButtonImage] Successfully loaded fallback light_off_icon.svg");
+                    return fallbackImage;
+                }
+                catch (Exception fallbackEx)
+                {
+                    PluginLog.Error(fallbackEx, "[GetButtonImage] Failed to load first fallback light_off_icon.svg");
+                    
+                    // Try second fallback: light_on_icon.svg
+                    try
+                    {
+                        PluginLog.Verbose("[GetButtonImage] Loading second fallback icon: light_on_icon.svg");
+                        var secondFallbackImage = PluginResources.ReadImage("light_on_icon.svg");
+                        PluginLog.Verbose("[GetButtonImage] Successfully loaded second fallback light_on_icon.svg");
+                        return secondFallbackImage;
+                    }
+                    catch (Exception secondFallbackEx)
+                    {
+                        PluginLog.Error(secondFallbackEx, "[GetButtonImage] Failed to load second fallback light_on_icon.svg");
+                        
+                        // Final fallback: Create a simple bitmap to prevent framework crash
+                        try
+                        {
+                            PluginLog.Warning("[GetButtonImage] Creating emergency fallback bitmap");
+                            using var bb = new BitmapBuilder(imageSize);
+                            bb.Clear(new BitmapColor(100, 100, 100)); // Gray background
+                            bb.DrawText("LIGHT", fontSize: 18, color: new BitmapColor(255, 255, 255));
+                            return bb.ToImage();
+                        }
+                        catch (Exception emergencyEx)
+                        {
+                            PluginLog.Error(emergencyEx, "[GetButtonImage] Even emergency fallback failed - this should never happen");
+                            throw; // Let the framework handle this critical failure
+                        }
+                    }
+                }
+            }
+        }
+
 
         public override IEnumerable<String> GetButtonPressActionNames(DeviceType _)
         {
