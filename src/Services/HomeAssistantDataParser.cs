@@ -261,6 +261,117 @@ namespace Loupedeck.HomeAssistantPlugin.Services
             return switches;
         }
 
+        public List<CoverData> ParseCoverStates(String statesJson, ParsedRegistryData registryData)
+        {
+            if (String.IsNullOrEmpty(statesJson))
+            {
+                throw new ArgumentException("States JSON cannot be null or empty", nameof(statesJson));
+            }
+
+            var covers = new List<CoverData>();
+
+            try
+            {
+                using var statesDoc = JsonDocument.Parse(statesJson);
+
+                foreach (var st in statesDoc.RootElement.EnumerateArray())
+                {
+                    var entityId = st.GetPropertyOrDefault("entity_id");
+                    if (String.IsNullOrEmpty(entityId) || !entityId.StartsWith("cover.", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    var state = st.TryGetProperty("state", out var s) ? s.GetString() ?? "" : "";
+                    var attrs = st.TryGetProperty("attributes", out var a) ? a : default;
+                    var isOn = String.Equals(state, "open", StringComparison.OrdinalIgnoreCase);
+
+                    var friendly = (attrs.ValueKind == JsonValueKind.Object && attrs.TryGetProperty("friendly_name", out var fn))
+                                   ? fn.GetString() ?? entityId
+                                   : entityId;
+
+                    // Get capabilities
+                    var caps = CoverCaps.FromAttributes(attrs);
+
+                    // Get device information
+                    String? deviceId = null, deviceName = "", mf = "", model = "";
+                    if (registryData.EntityDevice.TryGetValue(entityId, out var map) && !String.IsNullOrEmpty(map.deviceId))
+                    {
+                        deviceId = map.deviceId;
+                        if (registryData.DeviceById.TryGetValue(deviceId, out var d))
+                        {
+                            deviceName = d.name;
+                            mf = d.mf;
+                            model = d.model;
+                        }
+                    }
+
+                    // Area resolution
+                    String? areaId = null;
+                    if (registryData.EntityArea.TryGetValue(entityId, out var ea))
+                    {
+                        areaId = ea;
+                    }
+                    else if (!String.IsNullOrEmpty(deviceId) && registryData.DeviceAreaById.TryGetValue(deviceId, out var da))
+                    {
+                        areaId = da;
+                    }
+
+                    if (String.IsNullOrEmpty(areaId))
+                    {
+                        areaId = UnassignedAreaId;
+                    }
+
+                    // Process cover-specific attributes
+                    Int32? position = null, tiltPosition = null;
+
+                    if (attrs.ValueKind == JsonValueKind.Object)
+                    {
+                        // Get current position (0-100%)
+                        if (attrs.TryGetProperty("current_position", out var posEl) && posEl.ValueKind == JsonValueKind.Number)
+                        {
+                            var pos = posEl.GetInt32();
+                            position = HSBHelper.Clamp(pos, 0, 100);
+                        }
+
+                        // Get current tilt position (0-100%)
+                        if (attrs.TryGetProperty("current_tilt_position", out var tiltEl) && tiltEl.ValueKind == JsonValueKind.Number)
+                        {
+                            var tilt = tiltEl.GetInt32();
+                            tiltPosition = HSBHelper.Clamp(tilt, 0, 100);
+                        }
+                    }
+
+                    var coverData = new CoverData(
+                        entityId,
+                        friendly,
+                        state,
+                        isOn,
+                        deviceId,
+                        deviceName,
+                        mf,
+                        model,
+                        areaId,
+                        caps,
+                        position,
+                        tiltPosition
+                    );
+
+                    covers.Add(coverData);
+
+                    // Use lambda-based logging to defer expensive string operations - only evaluated when VERBOSE_LOGGING is enabled
+                    PluginLog.Verbose(() => $"[Cover] {entityId} | name='{friendly}' | state={state} | dev='{deviceName}' mf='{mf}' model='{model}' pos={position} tilt={tiltPosition} area='{areaId}'");
+                }
+            }
+            catch (Exception ex)
+            {
+                PluginLog.Error(ex, "Failed to parse cover states");
+                throw;
+            }
+
+            return covers;
+        }
+
         public void ProcessServices(String servicesJson)
         {
             if (String.IsNullOrEmpty(servicesJson))

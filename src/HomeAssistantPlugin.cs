@@ -58,6 +58,12 @@ namespace Loupedeck.HomeAssistantPlugin
         internal SwitchStateManager SwitchStateManager { get; } = new();
 
         /// <summary>
+        /// Gets the cover state manager for tracking and caching cover properties.
+        /// Exposed internally for actions to access the singleton instance.
+        /// </summary>
+        internal CoverStateManager CoverStateManager { get; } = new();
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="HomeAssistantPlugin"/> class.
         /// Sets up logging and creates singleton instances for WebSocket client and event listener.
         /// </summary>
@@ -130,7 +136,7 @@ namespace Loupedeck.HomeAssistantPlugin
                 PluginLog.Info("[Plugin] Closing WebSocket client...");
                 _ = this.HaClient.SafeCloseAsync();
 
-                PluginLog.Info("[Plugin] Light and switch state managers will persist - no cleanup needed");
+                PluginLog.Info("[Plugin] Light, switch, and cover state managers will persist - no cleanup needed");
 
                 PluginLog.Info("[Plugin] Unload() completed successfully");
             }
