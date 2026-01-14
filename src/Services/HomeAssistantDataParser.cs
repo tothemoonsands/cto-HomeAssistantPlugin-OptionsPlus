@@ -39,20 +39,20 @@ namespace Loupedeck.HomeAssistantPlugin.Services
 
         public Boolean ValidateJsonData(String? statesJson, String? servicesJson)
         {
-            if (String.IsNullOrEmpty(statesJson))
+            if (String.IsNullOrWhiteSpace(statesJson))
             {
                 PluginLog.Warning("get_states returned null or empty JSON");
                 HealthBus.Error("get_states returned invalid data");
                 return false;
             }
-
-            if (String.IsNullOrEmpty(servicesJson))
+    
+            if (String.IsNullOrWhiteSpace(servicesJson))
             {
                 PluginLog.Warning("get_services returned null or empty JSON");
                 HealthBus.Error("get_services returned invalid data");
                 return false;
             }
-
+    
             return true;
         }
 
@@ -508,6 +508,9 @@ namespace Loupedeck.HomeAssistantPlugin.Services
         private Dictionary<String, String> ParseAreaRegistry(Boolean ok, String? json)
         {
             var areaIdToName = new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase);
+            
+            // Always include unassigned area
+            areaIdToName[UnassignedAreaId] = UnassignedAreaName;
 
             if (!ok || String.IsNullOrEmpty(json))
             {
@@ -534,9 +537,6 @@ namespace Loupedeck.HomeAssistantPlugin.Services
             {
                 PluginLog.Warning(ex, "Failed to parse area registry");
             }
-
-            // Add unassigned area if we have any lights that might need it
-            areaIdToName[UnassignedAreaId] = UnassignedAreaName;
 
             return areaIdToName;
         }

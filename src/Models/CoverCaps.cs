@@ -46,7 +46,9 @@ namespace Loupedeck.HomeAssistantPlugin.Models
                         // SUPPORT_SET_TILT_POSITION = 128
 
                         // Check if basic open/close is supported
-                        onoff = (supportedFeatures & 1) != 0 || (supportedFeatures & 2) != 0; // SUPPORT_OPEN or SUPPORT_CLOSE
+                        onoff = (supportedFeatures & 1) != 0 ||   // SUPPORT_OPEN
+                                (supportedFeatures & 2) != 0 ||   // SUPPORT_CLOSE
+                                (supportedFeatures & 4) != 0;     // SUPPORT_SET_POSITION (can achieve open/close via position)
 
                         // Check if position control is supported
                         position = (supportedFeatures & 4) != 0; // SUPPORT_SET_POSITION

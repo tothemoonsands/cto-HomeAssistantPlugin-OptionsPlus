@@ -18,19 +18,28 @@ namespace Loupedeck.HomeAssistantPlugin.Services
         // Registry data storage
         private Dictionary<String, (String name, String manufacturer, String model)> _deviceById =
             new(StringComparer.OrdinalIgnoreCase);
-
+    
         private Dictionary<String, String> _deviceAreaById =
             new(StringComparer.OrdinalIgnoreCase);
-
+    
         private Dictionary<String, (String deviceId, String originalName)> _entityDevice =
             new(StringComparer.OrdinalIgnoreCase);
-
+    
         private Dictionary<String, String> _entityArea =
             new(StringComparer.OrdinalIgnoreCase);
-
+    
         private Dictionary<String, String> _areaIdToName =
             new(StringComparer.OrdinalIgnoreCase);
-
+    
+        /// <summary>
+        /// Constructor that initializes the registry with the default unassigned area.
+        /// </summary>
+        public RegistryService()
+        {
+            // Create default "!unassigned" area for entities without area assignments
+            this._areaIdToName[UnassignedAreaId] = UnassignedAreaName;
+        }
+    
         /// <summary>
         /// Updates all registry data from parsed registry information.
         /// </summary>
