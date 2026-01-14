@@ -4,8 +4,6 @@ using System.Collections.Generic;
 using Loupedeck;
 using Loupedeck.HomeAssistantPlugin.Services;
 
-using NSubstitute;
-
 namespace Loupedeck.HomeAssistantPlugin.Tests.Mocks
 {
     /// <summary>
@@ -25,14 +23,20 @@ namespace Loupedeck.HomeAssistantPlugin.Tests.Mocks
         }
 
         /// <summary>
-        /// Creates a simple fallback icon without native dependencies for testing.
+        /// Creates a fallback icon without native dependencies for testing.
+        /// This should never be called in tests as it requires SkiaSharp native DLL.
+        /// Tests should provide proper resource mappings to avoid this path.
         /// </summary>
-        /// <returns>A simple BitmapImage suitable for testing.</returns>
+        /// <returns>Never returns; always throws to indicate test configuration issue.</returns>
         protected override BitmapImage CreateFallbackIcon()
         {
-            // Return null for testing to avoid native dependencies completely
-            // Tests should handle this gracefully
-            return null!;
+            // Cannot create BitmapImage without SkiaSharp native DLL
+            // Tests that reach this point need to provide proper icon mappings
+            throw new InvalidOperationException(
+                "CreateFallbackIcon() was called in test environment. " +
+                "This requires SkiaSharp native libraries which are not available. " +
+                "Ensure all icon IDs used in tests are mapped in the resource map."
+            );
         }
     }
 }

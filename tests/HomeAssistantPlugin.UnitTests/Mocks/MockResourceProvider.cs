@@ -4,17 +4,15 @@ using System.Collections.Generic;
 using Loupedeck;
 using Loupedeck.HomeAssistantPlugin.Services;
 
-using NSubstitute;
-
 namespace Loupedeck.HomeAssistantPlugin.Tests.Mocks
 {
     /// <summary>
     /// Mock implementation of IResourceProvider for unit testing.
-    /// Creates mock BitmapImage objects using NSubstitute instead of native Loupedeck SDK methods.
+    /// Creates TestBitmapImage instances instead of using native Loupedeck SDK methods.
     /// </summary>
     internal sealed class MockResourceProvider : IResourceProvider
     {
-        private readonly Dictionary<String, BitmapImage> _mockImages = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<String, BitmapImage?> _mockImages = new(StringComparer.OrdinalIgnoreCase);
         private readonly Boolean _simulateFailure;
 
         /// <summary>
@@ -27,10 +25,12 @@ namespace Loupedeck.HomeAssistantPlugin.Tests.Mocks
         }
 
         /// <summary>
-        /// Loads a bitmap image, creating a mock BitmapImage using NSubstitute.
+        /// Loads a bitmap image. Returns null because creating BitmapImage instances
+        /// requires SkiaSharp native libraries which are not available in test environment.
+        /// Tests should provide all necessary resource mappings to avoid needing fallback icons.
         /// </summary>
         /// <param name="resourceName">The logical name of the resource.</param>
-        /// <returns>A mock bitmap image if simulateFailure is false; otherwise, null.</returns>
+        /// <returns>Always returns null to avoid SkiaSharp native library dependency.</returns>
         public BitmapImage? LoadImage(String resourceName)
         {
             if (String.IsNullOrEmpty(resourceName))
@@ -43,26 +43,25 @@ namespace Loupedeck.HomeAssistantPlugin.Tests.Mocks
                 return null;
             }
 
-            // Return cached mock image if we already created one for this resource
+            // Return cached value if we already attempted to load this resource
             if (this._mockImages.TryGetValue(resourceName, out var cachedImage))
             {
                 return cachedImage;
             }
 
-            try
-            {
-                // Create a mock BitmapImage using NSubstitute to avoid native dependencies
-                var mockImage = Substitute.For<BitmapImage>();
-                
-                // Store it in cache for consistent return values
-                this._mockImages[resourceName] = mockImage;
-                return mockImage;
-            }
-            catch (Exception)
-            {
-                // If mock image generation fails, return null
-                return null;
-            }
+            // Cannot create BitmapImage instances without SkiaSharp native libraries
+            // Tests should ensure all required icons are mapped to avoid hitting this path
+            this._mockImages[resourceName] = null;
+            return null;
+        }
+
+        /// <summary>
+        /// Gets any cached image, useful for fallback scenarios.
+        /// </summary>
+        /// <returns>Always returns null as no images can be created in test environment.</returns>
+        public BitmapImage? GetAnyCachedImage()
+        {
+            return null;
         }
 
         /// <summary>
