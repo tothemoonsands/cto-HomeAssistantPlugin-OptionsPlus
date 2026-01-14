@@ -135,7 +135,7 @@ namespace Loupedeck.HomeAssistantPlugin
         public AdvancedToggleCoversAction()
         {
             this.Name = "HomeAssistant.AdvancedToggleCovers";
-            this.DisplayName = "Advanced Toggle Covers";
+            this.DisplayName = "Advanced Set Covers";
             this.GroupName = "Covers";
             this.Description = "Control multiple Home Assistant covers with specific position and tilt settings. Set position (0-100%) and tilt position (0-100%) values for one or more covers.";
 

@@ -120,7 +120,7 @@ namespace Loupedeck.HomeAssistantPlugin
         public AreaToggleCoversAction()
         {
             this.Name = "HomeAssistant.AreaToggleCovers";
-            this.DisplayName = "Advanced Toggle Area Covers";
+            this.DisplayName = "Advanced Set Area Covers";
             this.GroupName = "Covers";
             this.Description = "Control all covers in a Home Assistant area with position and tilt settings.";
 
