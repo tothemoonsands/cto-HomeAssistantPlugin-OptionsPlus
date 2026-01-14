@@ -25,8 +25,8 @@ namespace Loupedeck.HomeAssistantPlugin.Models
 
             try
             {
-                // All covers support basic open/close by default
-                var onoff = true;
+                // Initialize capabilities - OnOff should only be true if cover supports basic open/close
+                var onoff = false;
                 var position = false;
                 var tiltPosition = false;
 
@@ -37,7 +37,7 @@ namespace Loupedeck.HomeAssistantPlugin.Models
                     {
                         // Home Assistant cover feature flags:
                         // SUPPORT_OPEN = 1
-                        // SUPPORT_CLOSE = 2  
+                        // SUPPORT_CLOSE = 2
                         // SUPPORT_SET_POSITION = 4
                         // SUPPORT_STOP = 8
                         // SUPPORT_OPEN_TILT = 16
@@ -45,14 +45,22 @@ namespace Loupedeck.HomeAssistantPlugin.Models
                         // SUPPORT_STOP_TILT = 64
                         // SUPPORT_SET_TILT_POSITION = 128
 
+                        // Check if basic open/close is supported
+                        onoff = (supportedFeatures & 1) != 0 || (supportedFeatures & 2) != 0; // SUPPORT_OPEN or SUPPORT_CLOSE
+
                         // Check if position control is supported
                         position = (supportedFeatures & 4) != 0; // SUPPORT_SET_POSITION
 
                         // Check if tilt position control is supported
                         tiltPosition = (supportedFeatures & 128) != 0; // SUPPORT_SET_TILT_POSITION
 
-                        PluginLog.Verbose($"[CoverCaps] Supported features: {supportedFeatures}, Position: {position}, TiltPosition: {tiltPosition}");
+                        PluginLog.Verbose($"[CoverCaps] Supported features: {supportedFeatures}, OnOff: {onoff}, Position: {position}, TiltPosition: {tiltPosition}");
                     }
+                }
+                else
+                {
+                    // No supported_features - assume basic open/close for backwards compatibility
+                    onoff = true;
                 }
 
                 // Also check for current_position and current_tilt_position attributes as indicators

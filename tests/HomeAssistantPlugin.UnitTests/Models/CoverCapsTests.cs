@@ -64,14 +64,14 @@ namespace Loupedeck.HomeAssistantPlugin.Tests.Models
         [Fact]
         public void FromAttributes_WithTiltControl_ReturnsTiltCapability()
         {
-            // Arrange - Cover with tilt control (features 128)
+            // Arrange - Cover with tilt control only (features 128)
             var attrs = CreateSupportedFeaturesJson(128);
 
             // Act
             var caps = CoverCaps.FromAttributes(attrs);
 
             // Assert
-            caps.OnOff.Should().BeTrue(); // Always true
+            caps.OnOff.Should().BeFalse(); // Tilt-only covers don't support basic open/close
             caps.Position.Should().BeFalse();
             caps.TiltPosition.Should().BeTrue();
         }
@@ -92,13 +92,16 @@ namespace Loupedeck.HomeAssistantPlugin.Tests.Models
         }
 
         [Theory]
-        [InlineData(4, true, false)]   // SUPPORT_SET_POSITION only
-        [InlineData(128, false, true)] // SUPPORT_SET_TILT_POSITION only
-        [InlineData(132, true, true)]  // Both position and tilt (4 + 128)
-        [InlineData(7, true, false)]   // Open + Close + Position (1 + 2 + 4)
-        [InlineData(159, true, true)]  // Open + Close + Position + Stop + Tilt (1+2+4+8+16+32+64+128 without some)
+        [InlineData(4, false, true, false)]   // SUPPORT_SET_POSITION only - no OnOff
+        [InlineData(128, false, false, true)] // SUPPORT_SET_TILT_POSITION only - no OnOff
+        [InlineData(132, false, true, true)]  // Both position and tilt (4 + 128) - no OnOff
+        [InlineData(7, true, true, false)]    // Open + Close + Position (1 + 2 + 4) - has OnOff
+        [InlineData(159, true, true, true)]   // Open + Close + Position + Stop + Tilt (1+2+4+8+16+32+64+128 without some) - has OnOff
+        [InlineData(1, true, false, false)]   // SUPPORT_OPEN only - has OnOff
+        [InlineData(2, true, false, false)]   // SUPPORT_CLOSE only - has OnOff
+        [InlineData(3, true, false, false)]   // SUPPORT_OPEN + SUPPORT_CLOSE - has OnOff
         public void FromAttributes_VariousFeatureCombinations_ReturnsExpectedCapabilities(
-            int features, bool expectedPosition, bool expectedTilt)
+            int features, bool expectedOnOff, bool expectedPosition, bool expectedTilt)
         {
             // Arrange
             var attrs = CreateSupportedFeaturesJson(features);
@@ -107,7 +110,7 @@ namespace Loupedeck.HomeAssistantPlugin.Tests.Models
             var caps = CoverCaps.FromAttributes(attrs);
 
             // Assert
-            caps.OnOff.Should().BeTrue(); // Always true
+            caps.OnOff.Should().Be(expectedOnOff);
             caps.Position.Should().Be(expectedPosition);
             caps.TiltPosition.Should().Be(expectedTilt);
         }
@@ -324,6 +327,27 @@ namespace Loupedeck.HomeAssistantPlugin.Tests.Models
             // Assert
             caps.OnOff.Should().BeTrue();
             caps.Position.Should().BeTrue();
+            caps.TiltPosition.Should().BeTrue();
+        }
+
+        [Fact]
+        public void FromAttributes_TiltOnlyBlind_ReturnsTiltOnlyCapabilities()
+        {
+            // Arrange - Blind that only supports tilt control (no open/close)
+            var json = @"{
+                ""supported_features"": 240,
+                ""current_tilt_position"": 50,
+                ""state"": ""unknown"",
+                ""device_class"": ""blind""
+            }";
+            var attrs = CreateJsonElement(json);
+
+            // Act
+            var caps = CoverCaps.FromAttributes(attrs);
+
+            // Assert - Should only support tilt, not regular open/close
+            caps.OnOff.Should().BeFalse();
+            caps.Position.Should().BeFalse();
             caps.TiltPosition.Should().BeTrue();
         }
 

@@ -1,0 +1,21 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+<!-- Window Frame -->
+<rect x="4" y="4" width="16" height="18" rx="1" stroke="#222425" stroke-width="2" fill="none"/>
+
+<!-- Blind Slats -->
+<rect x="5" y="6" width="14" height="1.5" fill="#222425"/>
+<rect x="5" y="9" width="14" height="1.5" fill="#222425"/>
+<rect x="5" y="12" width="14" height="1.5" fill="#222425"/>
+<rect x="5" y="15" width="14" height="1.5" fill="#222425"/>
+<rect x="5" y="18" width="14" height="1.5" fill="#222425"/>
+
+<!-- Position Control Slider -->
+<path fill-rule="evenodd" clip-rule="evenodd" d="M21.8293 13H27C27.5523 13 28 13.4477 28 14C28 14.5523 27.5523 15 27 15H21.8293C21.4175 16.1652 20.3062 17 19 17C17.3431 17 16 15.6569 16 14C16 12.3431 17.3431 11 19 11C20.3062 11 21.4175 11.8348 21.8293 13ZM19 13C19.5523 13 20 13.4477 20 14C20 14.5523 19.5523 15 19 15C18.4477 15 18 14.5523 18 14C18 13.4477 18.4477 13 19 13Z" fill="#222425"/>
+
+<!-- Tilt Control Slider -->
+<path fill-rule="evenodd" clip-rule="evenodd" d="M17 7C16.4477 7 16 7.44772 16 8C16 8.55228 16.4477 9 17 9H22.1707C22.5825 10.1652 23.6938 11 25 11C26.6569 11 28 9.65685 28 8C28 6.34315 26.6569 5 25 5C23.6938 5 22.5825 5.83481 22.1707 7H17ZM24 8C24 8.55228 24.4477 9 25 9C25.5523 9 26 8.55228 26 8C26 7.44772 25.5523 7 25 7C24.4477 7 24 7.44772 24 8Z" fill="#222425"/>
+
+<!-- Control Labels -->
+<text x="22" y="27" font-family="Arial, sans-serif" font-size="3" fill="#222425" text-anchor="middle">POS</text>
+<text x="22" y="23" font-family="Arial, sans-serif" font-size="3" fill="#222425" text-anchor="middle">TILT</text>
+</svg>

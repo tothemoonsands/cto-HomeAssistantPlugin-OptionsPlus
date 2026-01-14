@@ -162,12 +162,19 @@ namespace Loupedeck.HomeAssistantPlugin
                 var coverData = this._coverStateManager?.GetCoverData(this._currentEntityId);
                 if (coverData != null)
                 {
-                    var hasRegularControls = coverData.HasPositionControl || coverData.Capabilities.OnOff;
+                    // Determine which controls are supported based on capabilities
+                    var hasBasicControls = coverData.Capabilities.OnOff;
+                    var hasPositionControls = coverData.HasPositionControl;
                     var hasTiltControls = coverData.HasTiltControl;
 
-                    PluginLog.Debug(() => $"[GetButtonPressActionNames] Cover {this._currentEntityId}: HasRegularControls={hasRegularControls}, HasTiltControls={hasTiltControls}");
+                    // Regular controls = basic open/close OR position control
+                    var hasRegularControls = hasBasicControls || hasPositionControls;
 
-                    // Show regular controls if supported
+                    PluginLog.Debug(() => $"[GetButtonPressActionNames] Cover {this._currentEntityId}: " +
+                        $"BasicControls={hasBasicControls}, PositionControls={hasPositionControls}, " +
+                        $"TiltControls={hasTiltControls}, ShowingRegular={hasRegularControls}");
+
+                    // Show regular controls only if supported
                     if (hasRegularControls)
                     {
                         yield return this.CreateCommandName($"{PfxActOpen}{this._currentEntityId}");
@@ -175,7 +182,7 @@ namespace Loupedeck.HomeAssistantPlugin
                         yield return this.CreateCommandName($"{PfxActStop}{this._currentEntityId}");
                     }
 
-                    // Show tilt controls if supported
+                    // Show tilt controls only if supported
                     if (hasTiltControls)
                     {
                         yield return this.CreateCommandName($"{PfxActOpenTilt}{this._currentEntityId}");
@@ -183,10 +190,12 @@ namespace Loupedeck.HomeAssistantPlugin
                         yield return this.CreateCommandName($"{PfxActStopTilt}{this._currentEntityId}");
                     }
 
-                    // If neither type is supported, show basic controls as fallback
+                    // If no controls are supported, log warning and show basic fallback
                     if (!hasRegularControls && !hasTiltControls)
                     {
-                        PluginLog.Warning($"[GetButtonPressActionNames] Cover {this._currentEntityId} has no supported controls, showing basic fallback");
+                        PluginLog.Warning($"[GetButtonPressActionNames] Cover {this._currentEntityId} has no supported controls " +
+                            $"(OnOff={coverData.Capabilities.OnOff}, Position={hasPositionControls}, Tilt={hasTiltControls}), " +
+                            $"showing basic fallback");
                         yield return this.CreateCommandName($"{PfxActOpen}{this._currentEntityId}");
                         yield return this.CreateCommandName($"{PfxActClose}{this._currentEntityId}");
                         yield return this.CreateCommandName($"{PfxActStop}{this._currentEntityId}");
