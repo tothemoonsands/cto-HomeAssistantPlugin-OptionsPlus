@@ -36,6 +36,14 @@ namespace Loupedeck.HomeAssistantPlugin.Services
         Task<Boolean> StopCoverAsync(String entityId, CancellationToken ct = default);
 
         /// <summary>
+        /// Stops the tilt movement of the specified cover entity (if it's currently tilting).
+        /// </summary>
+        /// <param name="entityId">Target cover entity id.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns><c>true</c> if the service call succeeded; otherwise <c>false</c>.</returns>
+        Task<Boolean> StopCoverTiltAsync(String entityId, CancellationToken ct = default);
+
+        /// <summary>
         /// Sets the position of the specified cover entity (if position control is supported).
         /// </summary>
         /// <param name="entityId">Target cover entity id.</param>

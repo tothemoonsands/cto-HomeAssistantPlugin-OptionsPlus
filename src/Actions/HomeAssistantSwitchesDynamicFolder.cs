@@ -118,31 +118,7 @@ namespace Loupedeck.HomeAssistantPlugin
         public override PluginDynamicFolderNavigation GetNavigationArea(DeviceType _) =>
             PluginDynamicFolderNavigation.None;
 
-        public override String GetButtonDisplayName(PluginImageSize imageSize)
-        {
-            // Handle case where SwitchStateManager isn't initialized yet
-            if (this._switchStateManager == null)
-            {
-                return "Switches";
-            }
-
-            try
-            {
-                var switchCount = this._switchStateManager.GetTrackedEntityIds().Count();
-                
-                if (switchCount == 0)
-                {
-                    return "No Switches";
-                }
-                
-                return $"Switches ({switchCount})";
-            }
-            catch (Exception ex)
-            {
-                PluginLog.Warning(ex, "[GetButtonDisplayName] Failed to get switch count");
-                return "Switches";
-            }
-        }
+        public override String GetButtonDisplayName(PluginImageSize imageSize) => "All Switches";
 
         public override BitmapImage GetButtonImage(PluginImageSize imageSize)
         {

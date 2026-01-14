@@ -54,6 +54,9 @@ namespace Loupedeck.HomeAssistantPlugin
         private const String PfxActOpen = "act:open:"; // act:open:<entity_id>
         private const String PfxActClose = "act:close:"; // act:close:<entity_id>
         private const String PfxActStop = "act:stop:"; // act:stop:<entity_id>
+        private const String PfxActOpenTilt = "act:open_tilt:"; // act:open_tilt:<entity_id>
+        private const String PfxActCloseTilt = "act:close_tilt:"; // act:close_tilt:<entity_id>
+        private const String PfxActStopTilt = "act:stop_tilt:"; // act:stop_tilt:<entity_id>
 
         // ====================================================================
         // CONSTANTS - All magic numbers extracted to named constants
@@ -121,28 +124,7 @@ namespace Loupedeck.HomeAssistantPlugin
 
         public override String GetButtonDisplayName(PluginImageSize imageSize)
         {
-            // Handle case where CoverStateManager isn't initialized yet
-            if (this._coverStateManager == null)
-            {
-                return "Covers";
-            }
-
-            try
-            {
-                var coverCount = this._coverStateManager.GetTrackedEntityIds().Count();
-                
-                if (coverCount == 0)
-                {
-                    return "No Covers";
-                }
-                
-                return $"Covers ({coverCount})";
-            }
-            catch (Exception ex)
-            {
-                PluginLog.Warning(ex, "[GetButtonDisplayName] Failed to get cover count");
-                return "Covers";
-            }
+            return "All Covers";
         }
 
         public override BitmapImage GetButtonImage(PluginImageSize imageSize)
@@ -176,9 +158,48 @@ namespace Loupedeck.HomeAssistantPlugin
 
             if (this._level == ViewLevel.Device && !String.IsNullOrEmpty(this._currentEntityId))
             {
-                yield return this.CreateCommandName($"{PfxActOpen}{this._currentEntityId}");
-                yield return this.CreateCommandName($"{PfxActClose}{this._currentEntityId}");
-                yield return this.CreateCommandName($"{PfxActStop}{this._currentEntityId}");
+                // Get cover data to check capabilities
+                var coverData = this._coverStateManager?.GetCoverData(this._currentEntityId);
+                if (coverData != null)
+                {
+                    var hasRegularControls = coverData.HasPositionControl || coverData.Capabilities.OnOff;
+                    var hasTiltControls = coverData.HasTiltControl;
+
+                    PluginLog.Debug(() => $"[GetButtonPressActionNames] Cover {this._currentEntityId}: HasRegularControls={hasRegularControls}, HasTiltControls={hasTiltControls}");
+
+                    // Show regular controls if supported
+                    if (hasRegularControls)
+                    {
+                        yield return this.CreateCommandName($"{PfxActOpen}{this._currentEntityId}");
+                        yield return this.CreateCommandName($"{PfxActClose}{this._currentEntityId}");
+                        yield return this.CreateCommandName($"{PfxActStop}{this._currentEntityId}");
+                    }
+
+                    // Show tilt controls if supported
+                    if (hasTiltControls)
+                    {
+                        yield return this.CreateCommandName($"{PfxActOpenTilt}{this._currentEntityId}");
+                        yield return this.CreateCommandName($"{PfxActCloseTilt}{this._currentEntityId}");
+                        yield return this.CreateCommandName($"{PfxActStopTilt}{this._currentEntityId}");
+                    }
+
+                    // If neither type is supported, show basic controls as fallback
+                    if (!hasRegularControls && !hasTiltControls)
+                    {
+                        PluginLog.Warning($"[GetButtonPressActionNames] Cover {this._currentEntityId} has no supported controls, showing basic fallback");
+                        yield return this.CreateCommandName($"{PfxActOpen}{this._currentEntityId}");
+                        yield return this.CreateCommandName($"{PfxActClose}{this._currentEntityId}");
+                        yield return this.CreateCommandName($"{PfxActStop}{this._currentEntityId}");
+                    }
+                }
+                else
+                {
+                    // Fallback if cover data not available
+                    PluginLog.Warning($"[GetButtonPressActionNames] Cover data not available for {this._currentEntityId}, showing basic controls");
+                    yield return this.CreateCommandName($"{PfxActOpen}{this._currentEntityId}");
+                    yield return this.CreateCommandName($"{PfxActClose}{this._currentEntityId}");
+                    yield return this.CreateCommandName($"{PfxActStop}{this._currentEntityId}");
+                }
                 yield break;
             }
 
@@ -256,6 +277,21 @@ namespace Loupedeck.HomeAssistantPlugin
                 return "Stop Cover";
             }
             
+            if (actionParameter.StartsWith(PfxActOpenTilt, StringComparison.OrdinalIgnoreCase))
+            {
+                return "Open Tilt";
+            }
+            
+            if (actionParameter.StartsWith(PfxActCloseTilt, StringComparison.OrdinalIgnoreCase))
+            {
+                return "Close Tilt";
+            }
+            
+            if (actionParameter.StartsWith(PfxActStopTilt, StringComparison.OrdinalIgnoreCase))
+            {
+                return "Stop Tilt";
+            }
+            
             if (actionParameter.StartsWith(CmdArea, StringComparison.OrdinalIgnoreCase))
             {
                 var areaId = actionParameter.Substring(CmdArea.Length);
@@ -317,6 +353,22 @@ namespace Loupedeck.HomeAssistantPlugin
             {
                 return this._icons.Get(IconId.Switch); // Using switch icon as placeholder for stop
             }
+            
+            // TILT ACTION tiles
+            if (actionParameter.StartsWith(PfxActOpenTilt, StringComparison.OrdinalIgnoreCase))
+            {
+                return this._icons.Get(IconId.SwitchOn); // Using switch on icon as placeholder for tilt open
+            }
+            
+            if (actionParameter.StartsWith(PfxActCloseTilt, StringComparison.OrdinalIgnoreCase))
+            {
+                return this._icons.Get(IconId.SwitchOff); // Using switch off icon as placeholder for tilt close
+            }
+            
+            if (actionParameter.StartsWith(PfxActStopTilt, StringComparison.OrdinalIgnoreCase))
+            {
+                return this._icons.Get(IconId.Switch); // Using switch icon as placeholder for tilt stop
+            }
 
             // Fallback for any unhandled cases - return a default icon
             return this._icons.Get(IconId.Switch);
@@ -339,6 +391,9 @@ namespace Loupedeck.HomeAssistantPlugin
                     var cmd when cmd.StartsWith(PfxActOpen, StringComparison.OrdinalIgnoreCase) => this.HandleCoverOpenCommand(cmd),
                     var cmd when cmd.StartsWith(PfxActClose, StringComparison.OrdinalIgnoreCase) => this.HandleCoverCloseCommand(cmd),
                     var cmd when cmd.StartsWith(PfxActStop, StringComparison.OrdinalIgnoreCase) => this.HandleCoverStopCommand(cmd),
+                    var cmd when cmd.StartsWith(PfxActOpenTilt, StringComparison.OrdinalIgnoreCase) => this.HandleCoverOpenTiltCommand(cmd),
+                    var cmd when cmd.StartsWith(PfxActCloseTilt, StringComparison.OrdinalIgnoreCase) => this.HandleCoverCloseTiltCommand(cmd),
+                    var cmd when cmd.StartsWith(PfxActStopTilt, StringComparison.OrdinalIgnoreCase) => this.HandleCoverStopTiltCommand(cmd),
                     _ => false
                 };
 
@@ -463,6 +518,58 @@ namespace Loupedeck.HomeAssistantPlugin
             this.CommandImageChanged(this.CreateCommandName($"{PfxDevice}{entityId}"));
 
             this._coverSvc?.StopCoverAsync(entityId);
+            this.MarkCommandSent(entityId);
+            return true;
+        }
+
+        private Boolean HandleCoverOpenTiltCommand(String actionParameter)
+        {
+            var entityId = actionParameter.Substring(PfxActOpenTilt.Length);
+
+            PluginLog.Info($"[OpenTilt] Opening tilt for cover {entityId}");
+
+            // Update tilt state optimistically - set to 100 (fully open)
+            this._coverStateManager?.UpdateCoverTiltPosition(entityId, 100);
+            PluginLog.Debug(() => $"[OpenTilt] Updated CoverStateManager for {entityId}: tiltPosition=100");
+
+            this.CommandImageChanged(this.CreateCommandName($"{PfxDevice}{entityId}"));
+
+            // Use SetCoverTiltPositionAsync with position 100 (fully open)
+            _ = this._coverSvc?.SetCoverTiltPositionAsync(entityId, 100);
+            this.MarkCommandSent(entityId);
+            return true;
+        }
+
+        private Boolean HandleCoverCloseTiltCommand(String actionParameter)
+        {
+            var entityId = actionParameter.Substring(PfxActCloseTilt.Length);
+
+            PluginLog.Info($"[CloseTilt] Closing tilt for cover {entityId}");
+
+            // Update tilt state optimistically - set to 0 (fully closed)
+            this._coverStateManager?.UpdateCoverTiltPosition(entityId, 0);
+            PluginLog.Debug(() => $"[CloseTilt] Updated CoverStateManager for {entityId}: tiltPosition=0");
+
+            this.CommandImageChanged(this.CreateCommandName($"{PfxDevice}{entityId}"));
+
+            // Use SetCoverTiltPositionAsync with position 0 (fully closed)
+            _ = this._coverSvc?.SetCoverTiltPositionAsync(entityId, 0);
+            this.MarkCommandSent(entityId);
+            return true;
+        }
+
+        private Boolean HandleCoverStopTiltCommand(String actionParameter)
+        {
+            var entityId = actionParameter.Substring(PfxActStopTilt.Length);
+
+            PluginLog.Info($"[StopTilt] Stopping tilt for cover {entityId}");
+
+            // For tilt stop, we don't change the position - just stop movement
+            // The actual position will be updated when Home Assistant sends the new state
+            this.CommandImageChanged(this.CreateCommandName($"{PfxDevice}{entityId}"));
+
+            // Use the dedicated stop_cover_tilt service for stopping tilt movement
+            _ = this._coverSvc?.StopCoverTiltAsync(entityId);
             this.MarkCommandSent(entityId);
             return true;
         }

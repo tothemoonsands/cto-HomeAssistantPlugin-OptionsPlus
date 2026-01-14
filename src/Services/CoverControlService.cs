@@ -105,6 +105,32 @@ namespace Loupedeck.HomeAssistantPlugin
             }
         }
 
+        public async Task<Boolean> StopCoverTiltAsync(String entityId, CancellationToken ct = default)
+        {
+            try
+            {
+                PluginLog.Info($"[cover] Sending stop_cover_tilt command to {entityId}");
+
+                var (ok, err) = await this._ha.CallServiceAsync("cover", "stop_cover_tilt", entityId, null, ct).ConfigureAwait(false);
+
+                if (ok)
+                {
+                    PluginLog.Info($"[cover] stop_cover_tilt -> {entityId} OK");
+                }
+                else
+                {
+                    PluginLog.Warning($"[cover] stop_cover_tilt failed for {entityId}: {err}");
+                }
+
+                return ok;
+            }
+            catch (Exception ex)
+            {
+                PluginLog.Warning(ex, $"[cover] StopCoverTiltAsync exception for {entityId}");
+                return false;
+            }
+        }
+
         public async Task<Boolean> SetCoverPositionAsync(String entityId, Int32 position, CancellationToken ct = default)
         {
             try
