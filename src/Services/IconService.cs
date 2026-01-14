@@ -7,7 +7,7 @@ namespace Loupedeck.HomeAssistantPlugin.Services
     /// <summary>
     /// Loads embedded PNGs once and hands out cached BitmapImage instances by id.
     /// </summary>
-    internal sealed class IconService : IIconService
+    internal class IconService : IIconService
     {
         // ====================================================================
         // CONSTANTS - Icon Service Configuration
@@ -30,31 +30,43 @@ namespace Loupedeck.HomeAssistantPlugin.Services
         private const String FallbackIconText = "?";                  // Text to display in fallback icon
 
         private readonly Dictionary<String, BitmapImage?> _cache = new(StringComparer.OrdinalIgnoreCase);
-
+        private readonly IResourceProvider _resourceProvider;
+    
         /// <param name="resourceMap">logical id → embedded resource filename</param>
         public IconService(IDictionary<String, String> resourceMap)
+            : this(resourceMap, new PluginResourceProvider(typeof(HomeAssistantPlugin).Assembly))
+        {
+        }
+    
+        /// <param name="resourceMap">logical id → embedded resource filename</param>
+        /// <param name="resourceProvider">Resource provider for loading images</param>
+        public IconService(IDictionary<String, String> resourceMap, IResourceProvider resourceProvider)
         {
             PluginLog.Debug(() => $"[IconService] Constructor - Initializing with {resourceMap?.Count ?? 0} icon mappings");
-
+    
             if (resourceMap is null)
             {
                 PluginLog.Error("[IconService] Constructor failed - resourceMap is null");
                 throw new ArgumentNullException(nameof(resourceMap));
             }
-
+    
+            if (resourceProvider is null)
+            {
+                PluginLog.Error("[IconService] Constructor failed - resourceProvider is null");
+                throw new ArgumentNullException(nameof(resourceProvider));
+            }
+    
+            this._resourceProvider = resourceProvider;
+    
             try
             {
-                // Ensure plugin resources are ready (idempotent)
-                PluginLog.Verbose("[IconService] Initializing plugin resources...");
-                PluginResources.Init(typeof(HomeAssistantPlugin).Assembly);
-
                 var successCount = 0;
                 var failCount = 0;
-
+    
                 foreach (var kv in resourceMap)
                 {
                     PluginLog.Verbose(() => $"[IconService] Loading icon: '{kv.Key}' from '{kv.Value}'");
-                    var img = PluginResources.ReadImage(kv.Value);
+                    var img = this._resourceProvider.LoadImage(kv.Value);
                     if (img == null)
                     {
                         PluginLog.Warning(() => $"[IconService] Missing embedded icon: '{kv.Value}' for id '{kv.Key}'");
@@ -67,7 +79,7 @@ namespace Loupedeck.HomeAssistantPlugin.Services
                     }
                     this._cache[kv.Key] = img;
                 }
-
+    
                 PluginLog.Info(() => $"[IconService] Constructor completed - Loaded {successCount} icons successfully, {failCount} failed");
             }
             catch (Exception ex)
@@ -92,16 +104,17 @@ namespace Loupedeck.HomeAssistantPlugin.Services
             }
 
             PluginLog.Warning(() => $"[IconService] Get FALLBACK - Icon not found for id: '{id}', returning fallback icon");
-            return CreateFallbackIcon();
+            return this.CreateFallbackIcon();
         }
-
+    
         /// <summary>
         /// Creates a simple fallback icon when requested icons are not found.
+        /// Virtual to allow for testing overrides.
         /// </summary>
-        private static BitmapImage CreateFallbackIcon()
+        protected virtual BitmapImage CreateFallbackIcon()
         {
             PluginLog.Verbose("[IconService] CreateFallbackIcon - Generating fallback question mark icon");
-
+    
             try
             {
                 // Use a standard size for fallback icons

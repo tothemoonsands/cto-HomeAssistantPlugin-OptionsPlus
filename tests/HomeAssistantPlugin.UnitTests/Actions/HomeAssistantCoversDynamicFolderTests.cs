@@ -3,7 +3,6 @@ using System.Linq;
 using FluentAssertions;
 using Loupedeck.HomeAssistantPlugin;
 using Loupedeck.HomeAssistantPlugin.Models;
-using Moq;
 using Xunit;
 
 namespace Loupedeck.HomeAssistantPlugin.Tests.Actions
