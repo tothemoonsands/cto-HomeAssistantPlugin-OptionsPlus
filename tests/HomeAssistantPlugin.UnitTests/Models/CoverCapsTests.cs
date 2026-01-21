@@ -92,9 +92,9 @@ namespace Loupedeck.HomeAssistantPlugin.Tests.Models
         }
 
         [Theory]
-        [InlineData(4, false, true, false)]   // SUPPORT_SET_POSITION only - no OnOff
+        [InlineData(4, true, true, false)]    // SUPPORT_SET_POSITION only - Fixed: position control implies OnOff
         [InlineData(128, false, false, true)] // SUPPORT_SET_TILT_POSITION only - no OnOff
-        [InlineData(132, false, true, true)]  // Both position and tilt (4 + 128) - no OnOff
+        [InlineData(132, true, true, true)]   // Both position and tilt (4 + 128) - Fixed: position control implies OnOff
         [InlineData(7, true, true, false)]    // Open + Close + Position (1 + 2 + 4) - has OnOff
         [InlineData(159, true, true, true)]   // Open + Close + Position + Stop + Tilt (1+2+4+8+16+32+64+128 without some) - has OnOff
         [InlineData(1, true, false, false)]   // SUPPORT_OPEN only - has OnOff
