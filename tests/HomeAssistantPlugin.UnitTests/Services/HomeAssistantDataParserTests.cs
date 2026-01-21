@@ -105,8 +105,13 @@ public class HomeAssistantDataParserTests
     {
         // Arrange
         var registryData = CreateEmptyRegistryData();
-        var lightCaps = new Loupedeck.HomeAssistantPlugin.LightCaps(true, true, false, true);
-        this._mockCapabilityService.ForLight(Arg.Any<JsonElement>()).Returns(lightCaps);
+        var expectedCaps = new Loupedeck.HomeAssistantPlugin.LightCaps(
+            OnOff: false,           // No "onoff" mode in supported_color_modes
+            Brightness: true,       // Implied by color modes
+            ColorTemp: true,        // "color_temp" is in supported modes
+            ColorHs: true,          // "hs" is in supported modes
+            PreferredColorMode: "hs"  // "hs" is the preferred mode
+        );
 
         var statesJson = """
         [
@@ -136,7 +141,7 @@ public class HomeAssistantDataParserTests
         light.Brightness.Should().Be(128);
         light.Hue.Should().Be(120);
         light.Saturation.Should().Be(75);
-        light.Capabilities.Should().Be(lightCaps);
+        light.Capabilities.Should().Be(expectedCaps);
     }
 
     [Fact]

@@ -29,7 +29,8 @@ namespace Loupedeck.HomeAssistantPlugin
             {
                 if (attrs.ValueKind == JsonValueKind.Object &&
                     attrs.TryGetProperty("supported_color_modes", out var scm) &&
-                    scm.ValueKind == JsonValueKind.Array)
+                    scm.ValueKind == JsonValueKind.Array &&
+                    scm.GetArrayLength() > 0)
                 {
                     PluginLog.Verbose("[LightCaps] Found supported_color_modes array in attributes");
 
@@ -123,7 +124,8 @@ namespace Loupedeck.HomeAssistantPlugin
                     }
                     else
                     {
-                        PluginLog.Warning("[LightCaps] Attributes are not a JSON object - returning default capabilities");
+                        PluginLog.Warning("[LightCaps] Attributes are not a JSON object - returning default on/off capabilities");
+                        onoff = true;  // Safe fallback for invalid input
                     }
                 }
 

@@ -460,7 +460,7 @@ namespace Loupedeck.HomeAssistantPlugin.Tests.Services
             Assert.True(result.ColorHs);
             Assert.True(result.ColorTemp);
             Assert.True(result.Brightness);
-            Assert.Equal("RGB", result.PreferredColorMode); // Should preserve original case
+            Assert.Equal("rgb", result.PreferredColorMode);  // Home Assistant uses lowercase
         }
 
         #endregion
@@ -522,7 +522,7 @@ namespace Loupedeck.HomeAssistantPlugin.Tests.Services
         public void ForLight_JsonString_ReturnsFallbackCaps()
         {
             // Arrange
-            var jsonString = """"just a string"""";
+            var jsonString = "\"just a string\"";
             var attributes = JsonDocument.Parse(jsonString).RootElement;
 
             // Act

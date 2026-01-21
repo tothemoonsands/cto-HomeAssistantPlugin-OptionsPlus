@@ -9,9 +9,9 @@ namespace Loupedeck.HomeAssistantPlugin
     using Loupedeck.HomeAssistantPlugin.Models;
     using Loupedeck.HomeAssistantPlugin.Services;
 
-    public class HomeAssistantSwitchesDynamicFolder : PluginDynamicFolder
+    public class HomeAssistantCoversDynamicFolder : PluginDynamicFolder
     {
-        private record SwitchItem(
+        private record CoverItem(
             String EntityId,
             String FriendlyName,
             String State,
@@ -31,7 +31,7 @@ namespace Loupedeck.HomeAssistantPlugin
 
         private CancellationTokenSource _cts = new();
 
-        private readonly Dictionary<String, SwitchItem> _switchesByEntity = new();
+        private readonly Dictionary<String, CoverItem> _coversByEntity = new();
 
         // Navigation levels
         private enum ViewLevel { Root, Area, Device }
@@ -51,8 +51,12 @@ namespace Loupedeck.HomeAssistantPlugin
 
         // Action parameter prefixes
         private const String PfxDevice = "device:"; // device:<entity_id>
-        private const String PfxActOn = "act:on:"; // act:on:<entity_id>
-        private const String PfxActOff = "act:off:"; // act:off:<entity_id>
+        private const String PfxActOpen = "act:open:"; // act:open:<entity_id>
+        private const String PfxActClose = "act:close:"; // act:close:<entity_id>
+        private const String PfxActStop = "act:stop:"; // act:stop:<entity_id>
+        private const String PfxActOpenTilt = "act:open_tilt:"; // act:open_tilt:<entity_id>
+        private const String PfxActCloseTilt = "act:close_tilt:"; // act:close_tilt:<entity_id>
+        private const String PfxActStopTilt = "act:stop_tilt:"; // act:stop_tilt:<entity_id>
 
         // ====================================================================
         // CONSTANTS - All magic numbers extracted to named constants
@@ -79,7 +83,7 @@ namespace Loupedeck.HomeAssistantPlugin
         private readonly HaEventListener _events = new();
         private CancellationTokenSource _eventsCts = new();
 
-        private ISwitchControlService? _switchSvc;
+        private ICoverControlService? _coverSvc;
         private IHaClient? _ha; // adapter over HaWebSocketClient
 
         // --- Echo suppression: ignore HA frames shortly after we sent a command ---
@@ -89,43 +93,45 @@ namespace Loupedeck.HomeAssistantPlugin
         // Service dependencies
         private IHomeAssistantDataService? _dataService;
         private IHomeAssistantDataParser? _dataParser;
-        private ISwitchStateManager? _switchStateManager;
+        private ICoverStateManager? _coverStateManager;
         private IRegistryService? _registryService;
 
-        public HomeAssistantSwitchesDynamicFolder()
+        public HomeAssistantCoversDynamicFolder()
         {
-            PluginLog.Info("[SwitchesDynamicFolder] Constructor START");
+            PluginLog.Info("[CoversDynamicFolder] Constructor START");
 
-            this.DisplayName = "All Switch Controls";
-            this.GroupName = "Switches";
+            this.DisplayName = "All Cover Controls";
+            this.GroupName = "Covers";
 
             this._icons = new IconService(new Dictionary<String, String>
             {
                 { IconId.Back,        "back_icon.svg" },
-                { IconId.SwitchOn,    "switch_on_icon.svg" },
-                { IconId.SwitchOff,   "switch_off_icon.svg" },
+                { IconId.CoverOpen,    "cover_open_icon.svg" },    
+                { IconId.CoverClose,   "cover_close_icon.svg" },
+                { IconId.CoverStop,    "cover_stop_icon.svg" }   ,
+                { IconId.CoverTilt,    "cover_tilt_icon.svg" }   ,
                 { IconId.Retry,       "reload_icon.svg" },
                 { IconId.Issue,       "issue_status_icon.svg" },
                 { IconId.Online,      "online_status_icon.png" },
                 { IconId.Area,        "area_icon.svg" },
-                { IconId.Switch,      "switch_icon.svg" },
+                { IconId.Cover,      "cover_icon.svg" },       // Placeholder for cover icon
             });
 
-            PluginLog.Info($"[SwitchesDynamicFolder] Constructor - this.Plugin is null: {this.Plugin == null}");
-            PluginLog.Info("[SwitchesDynamicFolder] Constructor completed - dependency initialization deferred to OnLoad()");
+            PluginLog.Info($"[CoversDynamicFolder] Constructor - this.Plugin is null: {this.Plugin == null}");
+            PluginLog.Info("[CoversDynamicFolder] Constructor completed - dependency initialization deferred to OnLoad()");
         }
 
         public override PluginDynamicFolderNavigation GetNavigationArea(DeviceType _) =>
             PluginDynamicFolderNavigation.None;
 
-        public override String GetButtonDisplayName(PluginImageSize imageSize) => "All Switches";
+        public override String GetButtonDisplayName(PluginImageSize imageSize) => "All Covers";
 
         public override BitmapImage GetButtonImage(PluginImageSize imageSize)
         {
             try
             {
-                // Use switch_icon as the primary icon for switches
-                return PluginResources.ReadImage("multiple_switches_icon.svg");
+                // Use switch icon as a placeholder for covers until a dedicated cover icon is available
+                return PluginResources.ReadImage("multiple_covers_icon.svg");
             }
             catch (Exception ex)
             {
@@ -133,11 +139,11 @@ namespace Loupedeck.HomeAssistantPlugin
                 // Return a fallback image if the primary icon fails to load
                 try
                 {
-                    return PluginResources.ReadImage("switch_off_icon.svg");
+                    return PluginResources.ReadImage("area_icon.svg");
                 }
                 catch (Exception fallbackEx)
                 {
-                    PluginLog.Error(fallbackEx, "[GetButtonImage] Failed to load fallback switch_off_icon.svg");
+                    PluginLog.Error(fallbackEx, "[GetButtonImage] Failed to load fallback area_icon.svg");
                     throw; // Let the framework handle the final failure
                 }
             }
@@ -151,15 +157,64 @@ namespace Loupedeck.HomeAssistantPlugin
 
             if (this._level == ViewLevel.Device && !String.IsNullOrEmpty(this._currentEntityId))
             {
-                yield return this.CreateCommandName($"{PfxActOn}{this._currentEntityId}");
-                yield return this.CreateCommandName($"{PfxActOff}{this._currentEntityId}");
+                // Get cover data to check capabilities
+                var coverData = this._coverStateManager?.GetCoverData(this._currentEntityId);
+                if (coverData != null)
+                {
+                    // Determine which controls are supported based on capabilities
+                    var hasBasicControls = coverData.Capabilities.OnOff;
+                    var hasPositionControls = coverData.HasPositionControl;
+                    var hasTiltControls = coverData.HasTiltControl;
+
+                    // Regular controls = basic open/close OR position control
+                    var hasRegularControls = hasBasicControls || hasPositionControls;
+
+                    PluginLog.Debug(() => $"[GetButtonPressActionNames] Cover {this._currentEntityId}: " +
+                        $"BasicControls={hasBasicControls}, PositionControls={hasPositionControls}, " +
+                        $"TiltControls={hasTiltControls}, ShowingRegular={hasRegularControls}");
+
+                    // Show regular controls only if supported
+                    if (hasRegularControls)
+                    {
+                        yield return this.CreateCommandName($"{PfxActOpen}{this._currentEntityId}");
+                        yield return this.CreateCommandName($"{PfxActClose}{this._currentEntityId}");
+                        yield return this.CreateCommandName($"{PfxActStop}{this._currentEntityId}");
+                    }
+
+                    // Show tilt controls only if supported
+                    if (hasTiltControls)
+                    {
+                        yield return this.CreateCommandName($"{PfxActOpenTilt}{this._currentEntityId}");
+                        yield return this.CreateCommandName($"{PfxActCloseTilt}{this._currentEntityId}");
+                        yield return this.CreateCommandName($"{PfxActStopTilt}{this._currentEntityId}");
+                    }
+
+                    // If no controls are supported, log warning and show basic fallback
+                    if (!hasRegularControls && !hasTiltControls)
+                    {
+                        PluginLog.Warning($"[GetButtonPressActionNames] Cover {this._currentEntityId} has no supported controls " +
+                            $"(OnOff={coverData.Capabilities.OnOff}, Position={hasPositionControls}, Tilt={hasTiltControls}), " +
+                            $"showing basic fallback");
+                        yield return this.CreateCommandName($"{PfxActOpen}{this._currentEntityId}");
+                        yield return this.CreateCommandName($"{PfxActClose}{this._currentEntityId}");
+                        yield return this.CreateCommandName($"{PfxActStop}{this._currentEntityId}");
+                    }
+                }
+                else
+                {
+                    // Fallback if cover data not available
+                    PluginLog.Warning($"[GetButtonPressActionNames] Cover data not available for {this._currentEntityId}, showing basic controls");
+                    yield return this.CreateCommandName($"{PfxActOpen}{this._currentEntityId}");
+                    yield return this.CreateCommandName($"{PfxActClose}{this._currentEntityId}");
+                    yield return this.CreateCommandName($"{PfxActStop}{this._currentEntityId}");
+                }
                 yield break;
             }
 
             if (this._level == ViewLevel.Area && !String.IsNullOrEmpty(this._currentAreaId))
             {
-                // Switches for current area
-                foreach (var kv in this._switchesByEntity)
+                // Covers for current area
+                foreach (var kv in this._coversByEntity)
                 {
                     if (this._entityToAreaId.TryGetValue(kv.Key, out var aid) && String.Equals(aid, this._currentAreaId, StringComparison.OrdinalIgnoreCase))
                     {
@@ -169,9 +224,9 @@ namespace Loupedeck.HomeAssistantPlugin
                 yield break;
             }
 
-            // ROOT: list areas that actually have switches
+            // ROOT: list areas that actually have covers
             var areaIds = new HashSet<String>(StringComparer.OrdinalIgnoreCase);
-            foreach (var eid in this._switchesByEntity.Keys)
+            foreach (var eid in this._coversByEntity.Keys)
             {
                 if (this._entityToAreaId.TryGetValue(eid, out var aid))
                 {
@@ -212,19 +267,46 @@ namespace Loupedeck.HomeAssistantPlugin
             if (actionParameter.StartsWith(PfxDevice, StringComparison.OrdinalIgnoreCase))
             {
                 var entityId = actionParameter.Substring(PfxDevice.Length);
-                return this._switchesByEntity.TryGetValue(entityId, out var si) ? si.FriendlyName : entityId;
+                return this._coversByEntity.TryGetValue(entityId, out var ci) ? ci.FriendlyName : entityId;
             }
-            if (actionParameter.StartsWith(PfxActOn, StringComparison.OrdinalIgnoreCase))
+            
+            if (actionParameter.StartsWith(PfxActOpen, StringComparison.OrdinalIgnoreCase))
             {
-                return "On";
+                return "Open Cover";
             }
+            
+            if (actionParameter.StartsWith(PfxActClose, StringComparison.OrdinalIgnoreCase))
+            {
+                return "Close Cover";
+            }
+            
+            if (actionParameter.StartsWith(PfxActStop, StringComparison.OrdinalIgnoreCase))
+            {
+                return "Stop Cover";
+            }
+            
+            if (actionParameter.StartsWith(PfxActOpenTilt, StringComparison.OrdinalIgnoreCase))
+            {
+                return "Open Tilt";
+            }
+            
+            if (actionParameter.StartsWith(PfxActCloseTilt, StringComparison.OrdinalIgnoreCase))
+            {
+                return "Close Tilt";
+            }
+            
+            if (actionParameter.StartsWith(PfxActStopTilt, StringComparison.OrdinalIgnoreCase))
+            {
+                return "Stop Tilt";
+            }
+            
             if (actionParameter.StartsWith(CmdArea, StringComparison.OrdinalIgnoreCase))
             {
                 var areaId = actionParameter.Substring(CmdArea.Length);
                 return this._areaIdToName.TryGetValue(areaId, out var name) ? name : areaId;
             }
 
-            return actionParameter.StartsWith(PfxActOff, StringComparison.OrdinalIgnoreCase) ? "Off" : actionParameter;
+            return actionParameter;
         }
 
         // Paint the tile: green when OK, red on error
@@ -253,10 +335,10 @@ namespace Loupedeck.HomeAssistantPlugin
                 }
             }
 
-            // DEVICE tiles (switch icons)
+            // DEVICE tiles (cover icons)
             if (actionParameter.StartsWith(PfxDevice, StringComparison.OrdinalIgnoreCase))
             {
-                return this._icons.Get(IconId.Switch);
+                return this._icons.Get(IconId.Cover); // Using switch icon as placeholder for covers
             }
 
             if (actionParameter.StartsWith(CmdArea, StringComparison.OrdinalIgnoreCase))
@@ -265,17 +347,39 @@ namespace Loupedeck.HomeAssistantPlugin
             }
 
             // ACTION tiles
-            if (actionParameter.StartsWith(PfxActOn, StringComparison.OrdinalIgnoreCase))
+            if (actionParameter.StartsWith(PfxActOpen, StringComparison.OrdinalIgnoreCase))
             {
-                return this._icons.Get(IconId.SwitchOn);
+                return this._icons.Get(IconId.CoverOpen); // Using switch on icon as placeholder for open
             }
-            if (actionParameter.StartsWith(PfxActOff, StringComparison.OrdinalIgnoreCase))
+            
+            if (actionParameter.StartsWith(PfxActClose, StringComparison.OrdinalIgnoreCase))
             {
-                return this._icons.Get(IconId.SwitchOff);
+                return this._icons.Get(IconId.CoverClose); // Using switch off icon as placeholder for close
+            }
+            
+            if (actionParameter.StartsWith(PfxActStop, StringComparison.OrdinalIgnoreCase))
+            {
+                return this._icons.Get(IconId.CoverStop); // Using switch icon as placeholder for stop
+            }
+            
+            // TILT ACTION tiles
+            if (actionParameter.StartsWith(PfxActOpenTilt, StringComparison.OrdinalIgnoreCase))
+            {
+                return this._icons.Get(IconId.CoverTilt); // Using switch on icon as placeholder for tilt open
+            }
+            
+            if (actionParameter.StartsWith(PfxActCloseTilt, StringComparison.OrdinalIgnoreCase))
+            {
+                return this._icons.Get(IconId.CoverTilt); // Using switch off icon as placeholder for tilt close
+            }
+            
+            if (actionParameter.StartsWith(PfxActStopTilt, StringComparison.OrdinalIgnoreCase))
+            {
+                return this._icons.Get(IconId.CoverStop); // Using switch icon as placeholder for tilt stop
             }
 
             // Fallback for any unhandled cases - return a default icon
-            return this._icons.Get(IconId.Switch);
+            return this._icons.Get(IconId.Cover);
         }
 
         public override void RunCommand(String actionParameter)
@@ -292,8 +396,12 @@ namespace Loupedeck.HomeAssistantPlugin
                     CmdStatus => this.HandleStatusCommand(),
                     var cmd when cmd.StartsWith(CmdArea, StringComparison.OrdinalIgnoreCase) => this.HandleAreaCommand(cmd),
                     var cmd when cmd.StartsWith(PfxDevice, StringComparison.OrdinalIgnoreCase) => this.HandleDeviceCommand(cmd),
-                    var cmd when cmd.StartsWith(PfxActOn, StringComparison.OrdinalIgnoreCase) => this.HandleSwitchOnCommand(cmd),
-                    var cmd when cmd.StartsWith(PfxActOff, StringComparison.OrdinalIgnoreCase) => this.HandleSwitchOffCommand(cmd),
+                    var cmd when cmd.StartsWith(PfxActOpen, StringComparison.OrdinalIgnoreCase) => this.HandleCoverOpenCommand(cmd),
+                    var cmd when cmd.StartsWith(PfxActClose, StringComparison.OrdinalIgnoreCase) => this.HandleCoverCloseCommand(cmd),
+                    var cmd when cmd.StartsWith(PfxActStop, StringComparison.OrdinalIgnoreCase) => this.HandleCoverStopCommand(cmd),
+                    var cmd when cmd.StartsWith(PfxActOpenTilt, StringComparison.OrdinalIgnoreCase) => this.HandleCoverOpenTiltCommand(cmd),
+                    var cmd when cmd.StartsWith(PfxActCloseTilt, StringComparison.OrdinalIgnoreCase) => this.HandleCoverCloseTiltCommand(cmd),
+                    var cmd when cmd.StartsWith(PfxActStopTilt, StringComparison.OrdinalIgnoreCase) => this.HandleCoverStopTiltCommand(cmd),
                     _ => false
                 };
 
@@ -363,7 +471,7 @@ namespace Loupedeck.HomeAssistantPlugin
         {
             PluginLog.Info($"Entering Device view");
             var entityId = actionParameter.Substring(PfxDevice.Length);
-            if (!this._switchesByEntity.ContainsKey(entityId))
+            if (!this._coversByEntity.ContainsKey(entityId))
             {
                 return false;
             }
@@ -377,32 +485,99 @@ namespace Loupedeck.HomeAssistantPlugin
             return true;
         }
 
-        private Boolean HandleSwitchOnCommand(String actionParameter)
+        private Boolean HandleCoverOpenCommand(String actionParameter)
         {
-            var entityId = actionParameter.Substring(PfxActOn.Length);
+            var entityId = actionParameter.Substring(PfxActOpen.Length);
 
-            // Optimistic: mark ON immediately using SwitchStateManager (UI becomes responsive)
-            this._switchStateManager?.UpdateSwitchState(entityId, true);
-            PluginLog.Debug(() => $"[TurnOn] Updated SwitchStateManager for {entityId}: ON=true");
+            // Optimistic: mark OPEN immediately using CoverStateManager (UI becomes responsive)
+            this._coverStateManager?.UpdateCoverState(entityId, "open");
+            PluginLog.Debug(() => $"[OpenCover] Updated CoverStateManager for {entityId}: state=open");
 
             this.CommandImageChanged(this.CreateCommandName($"{PfxDevice}{entityId}"));
 
             this.MarkCommandSent(entityId);
-            _ = this._switchSvc?.TurnOnAsync(entityId);
+            _ = this._coverSvc?.OpenCoverAsync(entityId);
             return true;
         }
 
-        private Boolean HandleSwitchOffCommand(String actionParameter)
+        private Boolean HandleCoverCloseCommand(String actionParameter)
         {
-            var entityId = actionParameter.Substring(PfxActOff.Length);
+            var entityId = actionParameter.Substring(PfxActClose.Length);
 
-            // Optimistic: mark OFF using SwitchStateManager
-            this._switchStateManager?.UpdateSwitchState(entityId, false);
-            PluginLog.Debug(() => $"[TurnOff] Updated SwitchStateManager for {entityId}: ON=false");
+            // Optimistic: mark CLOSED using CoverStateManager
+            this._coverStateManager?.UpdateCoverState(entityId, "closed");
+            PluginLog.Debug(() => $"[CloseCover] Updated CoverStateManager for {entityId}: state=closed");
 
             this.CommandImageChanged(this.CreateCommandName($"{PfxDevice}{entityId}"));
 
-            this._switchSvc?.TurnOffAsync(entityId);
+            this._coverSvc?.CloseCoverAsync(entityId);
+            this.MarkCommandSent(entityId);
+            return true;
+        }
+
+        private Boolean HandleCoverStopCommand(String actionParameter)
+        {
+            var entityId = actionParameter.Substring(PfxActStop.Length);
+
+            // Mark as stopped using CoverStateManager
+            this._coverStateManager?.UpdateCoverState(entityId, "stopped");
+            PluginLog.Debug(() => $"[StopCover] Updated CoverStateManager for {entityId}: state=stopped");
+
+            this.CommandImageChanged(this.CreateCommandName($"{PfxDevice}{entityId}"));
+
+            this._coverSvc?.StopCoverAsync(entityId);
+            this.MarkCommandSent(entityId);
+            return true;
+        }
+
+        private Boolean HandleCoverOpenTiltCommand(String actionParameter)
+        {
+            var entityId = actionParameter.Substring(PfxActOpenTilt.Length);
+
+            PluginLog.Info($"[OpenTilt] Opening tilt for cover {entityId}");
+
+            // Update tilt state optimistically - set to 100 (fully open)
+            this._coverStateManager?.UpdateCoverTiltPosition(entityId, 100);
+            PluginLog.Debug(() => $"[OpenTilt] Updated CoverStateManager for {entityId}: tiltPosition=100");
+
+            this.CommandImageChanged(this.CreateCommandName($"{PfxDevice}{entityId}"));
+
+            // Use SetCoverTiltPositionAsync with position 100 (fully open)
+            _ = this._coverSvc?.SetCoverTiltPositionAsync(entityId, 100);
+            this.MarkCommandSent(entityId);
+            return true;
+        }
+
+        private Boolean HandleCoverCloseTiltCommand(String actionParameter)
+        {
+            var entityId = actionParameter.Substring(PfxActCloseTilt.Length);
+
+            PluginLog.Info($"[CloseTilt] Closing tilt for cover {entityId}");
+
+            // Update tilt state optimistically - set to 0 (fully closed)
+            this._coverStateManager?.UpdateCoverTiltPosition(entityId, 0);
+            PluginLog.Debug(() => $"[CloseTilt] Updated CoverStateManager for {entityId}: tiltPosition=0");
+
+            this.CommandImageChanged(this.CreateCommandName($"{PfxDevice}{entityId}"));
+
+            // Use SetCoverTiltPositionAsync with position 0 (fully closed)
+            _ = this._coverSvc?.SetCoverTiltPositionAsync(entityId, 0);
+            this.MarkCommandSent(entityId);
+            return true;
+        }
+
+        private Boolean HandleCoverStopTiltCommand(String actionParameter)
+        {
+            var entityId = actionParameter.Substring(PfxActStopTilt.Length);
+
+            PluginLog.Info($"[StopTilt] Stopping tilt for cover {entityId}");
+
+            // For tilt stop, we don't change the position - just stop movement
+            // The actual position will be updated when Home Assistant sends the new state
+            this.CommandImageChanged(this.CreateCommandName($"{PfxDevice}{entityId}"));
+
+            // Use the dedicated stop_cover_tilt service for stopping tilt movement
+            _ = this._coverSvc?.StopCoverTiltAsync(entityId);
             this.MarkCommandSent(entityId);
             return true;
         }
@@ -410,66 +585,66 @@ namespace Loupedeck.HomeAssistantPlugin
         // 🔧 return bools here:
         public override Boolean Load()
         {
-            PluginLog.Info("[SwitchesDynamicFolder] Load() START");
-            PluginLog.Debug(() => $"[SwitchesDynamicFolder] Folder.Name = {this.Name}, CommandName = {this.CommandName}");
+            PluginLog.Info("[CoversDynamicFolder] Load() START");
+            PluginLog.Debug(() => $"[CoversDynamicFolder] Folder.Name = {this.Name}, CommandName = {this.CommandName}");
 
             try
             {
                 // Initialize dependencies now that Plugin is available
-                PluginLog.Debug(() => $"[SwitchesDynamicFolder] Load() - this.Plugin is null: {this.Plugin == null}");
+                PluginLog.Debug(() => $"[CoversDynamicFolder] Load() - this.Plugin is null: {this.Plugin == null}");
 
                 if (this.Plugin is HomeAssistantPlugin haPlugin)
                 {
-                    PluginLog.Debug(() => $"[SwitchesDynamicFolder] Load() - this.Plugin type: {this.Plugin.GetType().Name}");
+                    PluginLog.Debug(() => $"[CoversDynamicFolder] Load() - this.Plugin type: {this.Plugin.GetType().Name}");
 
                     // Initialize dependency injection - use the shared HaClient from Plugin
-                    PluginLog.Info("[SwitchesDynamicFolder] Load() - Initializing dependencies");
+                    PluginLog.Info("[CoversDynamicFolder] Load() - Initializing dependencies");
 
                     this._ha = new HaClientAdapter(haPlugin.HaClient);
                     this._dataService = new HomeAssistantDataService(this._ha);
                     this._dataParser = new HomeAssistantDataParser(new CapabilityService());
 
-                    // Use the singleton SwitchStateManager from the main plugin to preserve state across folder exits/entries
-                    this._switchStateManager = haPlugin.SwitchStateManager;
-                    var existingCount = this._switchStateManager.GetTrackedEntityIds().Count();
-                    PluginLog.Info(() => $"[SwitchesDynamicFolder] Using singleton SwitchStateManager with {existingCount} existing tracked entities");
+                    // Use the singleton CoverStateManager from the main plugin to preserve state across folder exits/entries
+                    this._coverStateManager = haPlugin.CoverStateManager;
+                    var existingCount = this._coverStateManager.GetTrackedEntityIds().Count();
+                    PluginLog.Info(() => $"[CoversDynamicFolder] Using singleton CoverStateManager with {existingCount} existing tracked entities");
 
                     this._registryService = new RegistryService();
 
-                    // Initialize switch control service
-                    this._switchSvc = new SwitchControlService(this._ha);
+                    // Initialize cover control service
+                    this._coverSvc = new CoverControlService(this._ha);
 
-                    PluginLog.Info("[SwitchesDynamicFolder] Load() - All dependencies initialized successfully");
+                    PluginLog.Info("[CoversDynamicFolder] Load() - All dependencies initialized successfully");
                 }
                 else
                 {
-                    PluginLog.Error(() => $"[SwitchesDynamicFolder] Load() - Plugin is not HomeAssistantPlugin, actual type: {this.Plugin?.GetType()?.Name ?? "null"}");
+                    PluginLog.Error(() => $"[CoversDynamicFolder] Load() - Plugin is not HomeAssistantPlugin, actual type: {this.Plugin?.GetType()?.Name ?? "null"}");
                     return false;
                 }
 
                 HealthBus.HealthChanged += this.OnHealthChanged;
 
-                PluginLog.Info("[SwitchesDynamicFolder] Load() completed successfully");
+                PluginLog.Info("[CoversDynamicFolder] Load() completed successfully");
                 return true;
             }
             catch (Exception ex)
             {
-                PluginLog.Error(ex, "[SwitchesDynamicFolder] Load() failed with exception");
+                PluginLog.Error(ex, "[CoversDynamicFolder] Load() failed with exception");
                 return false;
             }
         }
 
         public override Boolean Unload()
         {
-            PluginLog.Info("SwitchesDynamicFolder.Unload()");
+            PluginLog.Info("CoversDynamicFolder.Unload()");
 
-            if (this._switchStateManager != null)
+            if (this._coverStateManager != null)
             {
-                var trackedCount = this._switchStateManager.GetTrackedEntityIds().Count();
-                PluginLog.Info(() => $"[SwitchesDynamicFolder] Unloading - SwitchStateManager retains {trackedCount} tracked entities (singleton preserved)");
+                var trackedCount = this._coverStateManager.GetTrackedEntityIds().Count();
+                PluginLog.Info(() => $"[CoversDynamicFolder] Unloading - CoverStateManager has {trackedCount} tracked entities");
             }
 
-            this._switchSvc?.Dispose();
+            this._coverSvc?.Dispose();
             this._eventsCts?.Cancel();
             this._events.SafeCloseAsync();
 
@@ -479,19 +654,19 @@ namespace Loupedeck.HomeAssistantPlugin
 
         public override Boolean Activate()
         {
-            PluginLog.Info("SwitchesDynamicFolder.Activate() -> authenticate");
+            PluginLog.Info("CoversDynamicFolder.Activate() -> authenticate");
             var ret = this.AuthenticateSync();
             return ret;
         }
 
         public override Boolean Deactivate()
         {
-            PluginLog.Info("SwitchesDynamicFolder.Deactivate() -> close WS");
+            PluginLog.Info("CoversDynamicFolder.Deactivate() -> close WS");
 
-            if (this._switchStateManager != null)
+            if (this._coverStateManager != null)
             {
-                var trackedCount = this._switchStateManager.GetTrackedEntityIds().Count();
-                PluginLog.Info(() => $"[SwitchesDynamicFolder] Deactivating - SwitchStateManager retains {trackedCount} tracked entities (singleton preserved)");
+                var trackedCount = this._coverStateManager.GetTrackedEntityIds().Count();
+                PluginLog.Info(() => $"[CoversDynamicFolder] Deactivating - CoverStateManager has {trackedCount} tracked entities");
             }
 
             this._cts?.Cancel();
@@ -554,24 +729,24 @@ namespace Loupedeck.HomeAssistantPlugin
                         this._eventsCts?.Cancel();
                         this._eventsCts = new CancellationTokenSource();
                         
-                        // Subscribe to switch state changes
-                        this._events.SwitchStateChanged -= this.OnHaSwitchStateChanged;
-                        this._events.SwitchStateChanged += this.OnHaSwitchStateChanged;
+                        // TODO: Subscribe to cover state changes when HaEventListener supports cover events
+                        // this._events.CoverStateChanged -= this.OnHaCoverStateChanged;
+                        // this._events.CoverStateChanged += this.OnHaCoverStateChanged;
                         
                         PluginLog.Verbose("[WS] connecting event stream…");
                         _ = this._events.ConnectAndSubscribeAsync(baseUrl, token, this._eventsCts.Token); // fire-and-forget
-                        PluginLog.Info("[events] subscribed to switch state_changed");
+                        PluginLog.Info("[events] Event listener connected (cover events not yet supported)");
                     }
                     catch (Exception ex)
                     {
                         PluginLog.Warning(ex, "[events] subscribe failed");
                     }
 
-                    // Fetch and log the current switches
-                    var okFetch = this.FetchSwitchesAndServices();
+                    // Fetch and log the current covers
+                    var okFetch = this.FetchCoversAndServices();
                     if (!okFetch)
                     {
-                        PluginLog.Warning("FetchSwitchesAndServices encountered issues (see logs).");
+                        PluginLog.Warning("FetchCoversAndServices encountered issues (see logs).");
                     }
 
                     this._ha?.EnsureConnectedAsync(TimeSpan.FromSeconds(AuthTimeoutSeconds), this._cts.Token).GetAwaiter().GetResult();
@@ -593,22 +768,22 @@ namespace Loupedeck.HomeAssistantPlugin
             }
         }
 
-        private Boolean FetchSwitchesAndServices()
+        private Boolean FetchCoversAndServices()
         {
             try
             {
-                if (this._dataService == null || this._dataParser == null || this._registryService == null || this._switchStateManager == null)
+                if (this._dataService == null || this._dataParser == null || this._registryService == null || this._coverStateManager == null)
                 {
-                    PluginLog.Error("[SwitchesDynamicFolder] FetchSwitchesAndServices: Required services are not initialized");
+                    PluginLog.Error("[CoversDynamicFolder] FetchCoversAndServices: Required services are not initialized");
                     return false;
                 }
 
-                // Use the self-contained InitOrUpdateAsync method for switch state initialization
-                var (switchSuccess, switchError) = this._switchStateManager.InitOrUpdateAsync(this._dataService, this._dataParser, this._cts.Token).GetAwaiter().GetResult();
-                if (!switchSuccess)
+                // Use the self-contained InitOrUpdateAsync method for cover state initialization
+                var (coverSuccess, coverError) = this._coverStateManager.InitOrUpdateAsync(this._dataService, this._dataParser, this._cts.Token).GetAwaiter().GetResult();
+                if (!coverSuccess)
                 {
-                    PluginLog.Error($"[SwitchesDynamicFolder] Switch state initialization failed: {switchError}");
-                    HealthBus.Error("Switch init failed");
+                    PluginLog.Error($"[CoversDynamicFolder] Cover state initialization failed: {coverError}");
+                    HealthBus.Error("Cover init failed");
                     return false;
                 }
 
@@ -636,38 +811,38 @@ namespace Loupedeck.HomeAssistantPlugin
 
                 if (!okStates || String.IsNullOrEmpty(statesJson))
                 {
-                    PluginLog.Error($"[SwitchesDynamicFolder] Failed to re-fetch states for additional processing: {errStates}");
-                    // Don't fail here since switch initialization succeeded - just log warning
-                    PluginLog.Warning("[SwitchesDynamicFolder] Continuing without additional state processing");
+                    PluginLog.Error($"[CoversDynamicFolder] Failed to re-fetch states for additional processing: {errStates}");
+                    // Don't fail here since cover initialization succeeded - just log warning
+                    PluginLog.Warning("[CoversDynamicFolder] Continuing without additional state processing");
                 }
                 else
                 {
                     // Validate required JSON data using the parser (unique to DynamicFolder)
                     if (!this._dataParser.ValidateJsonData(statesJson, servicesJson))
                     {
-                        PluginLog.Warning("[SwitchesDynamicFolder] JSON data validation failed - continuing without validation");
+                        PluginLog.Warning("[CoversDynamicFolder] JSON data validation failed - continuing without validation");
                     }
 
                     // Parse registry data and update registry service (unique to DynamicFolder)
                     var registryData = this._dataParser.ParseRegistries(devJson, entJson, areaJson);
                     this._registryService.UpdateRegistries(registryData);
 
-                    // Parse switch states for internal cache updates (unique to DynamicFolder)
-                    var switches = this._dataParser.ParseSwitchStates(statesJson, registryData);
+                    // Get cover data from CoverStateManager after initialization
+                    var covers = this._coverStateManager.GetAllCovers().ToList();
 
                     // Update internal caches for compatibility with existing code (unique to DynamicFolder)
-                    this.UpdateInternalCachesFromServices(switches, registryData);
+                    this.UpdateInternalCachesFromServices(covers, registryData);
                 }
 
                 // Process services using the parser (unique to DynamicFolder)
                 this._dataParser.ProcessServices(servicesJson);
 
-                HealthBus.Ok("Fetched switches/services");
+                HealthBus.Ok("Fetched covers/services");
                 return true;
             }
             catch (Exception ex)
             {
-                PluginLog.Error(ex, "FetchSwitchesAndServices failed");
+                PluginLog.Error(ex, "FetchCoversAndServices failed");
                 HealthBus.Error("Fetch failed");
                 return false;
             }
@@ -675,16 +850,16 @@ namespace Loupedeck.HomeAssistantPlugin
 
         /// <summary>
         /// Updates internal caches from services - only maintains non-state data for UI purposes
-        /// State management is now handled entirely by SwitchStateManager
+        /// State management is now handled entirely by CoverStateManager
         /// </summary>
-        private void UpdateInternalCachesFromServices(List<SwitchData> switches, ParsedRegistryData registryData)
+        private void UpdateInternalCachesFromServices(List<CoverData> covers, ParsedRegistryData registryData)
         {
-            // Clear existing UI data (state is managed by SwitchStateManager)
-            this._switchesByEntity.Clear();
+            // Clear existing UI data (state is managed by CoverStateManager)
+            this._coversByEntity.Clear();
             this._entityToAreaId.Clear();
             this._areaIdToName.Clear();
 
-            PluginLog.Debug(() => $"[UpdateInternalCachesFromServices] Clearing UI caches, SwitchStateManager handles all state data");
+            PluginLog.Debug(() => $"[UpdateInternalCachesFromServices] Clearing UI caches, CoverStateManager handles all state data");
 
             // Update from registry data
             foreach (var (areaId, areaName) in registryData.AreaIdToName)
@@ -692,43 +867,46 @@ namespace Loupedeck.HomeAssistantPlugin
                 this._areaIdToName[areaId] = areaName;
             }
 
-            // Update from switch data - only UI-related data, not state
-            foreach (var switchEntity in switches)
+            // Update from cover data - only UI-related data, not state
+            foreach (var coverEntity in covers)
             {
-                var si = new SwitchItem(switchEntity.EntityId, switchEntity.FriendlyName, switchEntity.State,
-                                       switchEntity.DeviceId ?? "", switchEntity.DeviceName, switchEntity.Manufacturer, switchEntity.Model);
-                this._switchesByEntity[switchEntity.EntityId] = si;
-                this._entityToAreaId[switchEntity.EntityId] = switchEntity.AreaId;
+                var ci = new CoverItem(coverEntity.EntityId, coverEntity.FriendlyName, coverEntity.State,
+                                       coverEntity.DeviceId ?? "", coverEntity.DeviceName, coverEntity.Manufacturer, coverEntity.Model);
+                this._coversByEntity[coverEntity.EntityId] = ci;
+                this._entityToAreaId[coverEntity.EntityId] = coverEntity.AreaId;
             }
 
-            PluginLog.Info(() => $"[UpdateInternalCachesFromServices] Updated {switches.Count} switches, {registryData.AreaIdToName.Count} areas - state managed by SwitchStateManager");
+            PluginLog.Info(() => $"[UpdateInternalCachesFromServices] Updated {covers.Count} covers, {registryData.AreaIdToName.Count} areas - state managed by CoverStateManager");
         }
 
-        private void OnHaSwitchStateChanged(String entityId, Boolean isOn)
+        // TODO: Implement when HaEventListener supports cover state change events
+        /*
+        private void OnHaCoverStateChanged(String entityId, String state)
         {
-            // Only switches
-            if (!entityId.StartsWith("switch.", StringComparison.OrdinalIgnoreCase))
+            // Only covers
+            if (!entityId.StartsWith("cover.", StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }
 
-            var priorIsOn = this._switchStateManager?.IsSwitchOn(entityId) ?? false;
-            var wasIgnored = this.ShouldIgnoreFrame(entityId, "switch_state");
+            var priorState = this._coverStateManager?.GetCoverState(entityId) ?? "unknown";
+            var wasIgnored = this.ShouldIgnoreFrame(entityId, "cover_state");
 
-            PluginLog.Verbose(() => $"[OnHaSwitchStateChanged] {entityId}: receivedIsOn={isOn}, priorIsOn={priorIsOn}, wasIgnored={wasIgnored}");
+            PluginLog.Verbose(() => $"[OnHaCoverStateChanged] {entityId}: receivedState={state}, priorState={priorState}, wasIgnored={wasIgnored}");
 
             if (wasIgnored)
             {
                 return;
             }
 
-            // Update switch state using SwitchStateManager
-            this._switchStateManager?.UpdateSwitchState(entityId, isOn);
-            PluginLog.Verbose(() => $"[OnHaSwitchStateChanged] {entityId}: Updated to {(isOn ? "ON" : "OFF")} state");
+            // Update cover state using CoverStateManager
+            this._coverStateManager?.UpdateCoverState(entityId, state);
+            PluginLog.Verbose(() => $"[OnHaCoverStateChanged] {entityId}: Updated to {state} state");
 
             // Also repaint the device tile icon if visible in the current view
             this.CommandImageChanged(this.CreateCommandName($"{PfxDevice}{entityId}"));
         }
+        */
 
         private void MarkCommandSent(String entityId) => this._lastCmdAt[entityId] = DateTime.UtcNow;
 

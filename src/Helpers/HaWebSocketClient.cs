@@ -412,5 +412,131 @@ namespace Loupedeck.HomeAssistantPlugin
                 return null;
             }
         }
+
+        /// <summary>
+        /// Splits multiple concatenated JSON messages into individual messages.
+        /// Handles Home Assistant's WebSocket responses which may contain multiple JSON objects.
+        /// </summary>
+        /// <param name="combinedData">Combined JSON string potentially containing multiple messages</param>
+        /// <returns>List of individual JSON message strings</returns>
+        private List<String> SplitCombinedJsonMessages(String combinedData)
+        {
+            var messages = new List<String>();
+
+            // Return empty list if input is null/whitespace
+            if (String.IsNullOrWhiteSpace(combinedData))
+            {
+                return messages;
+            }
+
+            var i = 0;
+            var len = combinedData.Length;
+
+            while (i < len)
+            {
+                // Skip leading whitespace
+                while (i < len && Char.IsWhiteSpace(combinedData[i]))
+                {
+                    i++;
+                }
+
+                if (i >= len)
+                {
+                    break;
+                }
+
+                // Must start with '{'
+                if (combinedData[i] != '{')
+                {
+                    break;
+                }
+
+                // Track brace depth and find the end of this JSON object
+                var startIndex = i;
+                var braceDepth = 0;
+                var inString = false;
+                var escapeNext = false;
+
+                while (i < len)
+                {
+                    var c = combinedData[i];
+
+                    if (escapeNext)
+                    {
+                        // Skip this character as it's escaped
+                        escapeNext = false;
+                        i++;
+                        continue;
+                    }
+
+                    if (c == '\\')
+                    {
+                        escapeNext = true;
+                        i++;
+                        continue;
+                    }
+
+                    if (c == '"')
+                    {
+                        inString = !inString;
+                    }
+                    else if (!inString)
+                    {
+                        if (c == '{')
+                        {
+                            braceDepth++;
+                        }
+                        else if (c == '}')
+                        {
+                            braceDepth--;
+                            if (braceDepth == 0)
+                            {
+                                // Found the end of this JSON object
+                                i++;
+                                break;
+                            }
+                        }
+                    }
+
+                    i++;
+                }
+
+                // Extract the message
+                var messageLength = i - startIndex;
+                if (messageLength > 0)
+                {
+                    var message = combinedData.Substring(startIndex, messageLength);
+
+                    // Validate that it's valid JSON
+                    if (IsValidJson(message))
+                    {
+                        messages.Add(message);
+                    }
+                }
+            }
+
+            return messages;
+        }
+
+        /// <summary>
+        /// Validates if a string is valid JSON
+        /// </summary>
+        private static Boolean IsValidJson(String json)
+        {
+            if (String.IsNullOrWhiteSpace(json))
+            {
+                return false;
+            }
+
+            try
+            {
+                using var doc = JsonDocument.Parse(json);
+                return true;
+            }
+            catch (JsonException)
+            {
+                return false;
+            }
+        }
     }
 }
