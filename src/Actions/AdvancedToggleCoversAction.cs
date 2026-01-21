@@ -164,7 +164,7 @@ namespace Loupedeck.HomeAssistantPlugin
 
             this._icons = new IconService(new Dictionary<String, String>
             {
-                { IconId.Bulb, "light_bulb_icon.svg" } // Using existing icon until proper cover icon is available
+                { IconId.Cover, "cover_icon.svg" } 
             });
 
             PluginLog.Info($"{LogPrefix} Constructor completed - dependency initialization deferred to OnLoad()");
@@ -179,7 +179,7 @@ namespace Loupedeck.HomeAssistantPlugin
         /// <returns>Bitmap image showing a cover icon.</returns>
         protected override BitmapImage GetCommandImage(ActionEditorActionParameters parameters, Int32 width, Int32 height) =>
             // Using light bulb icon for now - will be replaced with proper cover icon
-            this._icons.Get(IconId.Bulb);
+            this._icons.Get(IconId.Cover);
 
         /// <summary>
         /// Loads the action and initializes service dependencies using modern dependency injection pattern.

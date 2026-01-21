@@ -125,7 +125,7 @@ namespace Loupedeck.HomeAssistantPlugin
             try
             {
                 // Use switch_icon as the primary icon for switches
-                return PluginResources.ReadImage("switch_icon.svg");
+                return PluginResources.ReadImage("multiple_switches_icon.svg");
             }
             catch (Exception ex)
             {

@@ -154,5 +154,11 @@ namespace Loupedeck.HomeAssistantPlugin.Services
         public const String Switch = "switch";
         public const String SwitchOn = "switchOn";
         public const String SwitchOff = "switchOff";
+        public const String Cover = "cover";
+        public const String CoverClose = "cover_close";
+        public const String CoverOpen = "cover_open";
+        public const String CoverStop = "cover_stop";
+        public const String CoverTilt = "cover_tilt";
+        public const String MultipleCovers = "multiple_covers";
     }
 }

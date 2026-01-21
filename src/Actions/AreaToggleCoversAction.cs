@@ -142,7 +142,7 @@ namespace Loupedeck.HomeAssistantPlugin
 
             this._icons = new IconService(new Dictionary<String, String>
             {
-                { IconId.Area, "area_icon.svg" }
+                { IconId.Cover, "cover_icon.svg" }
             });
 
             PluginLog.Info($"{LogPrefix} Constructor completed - dependency initialization deferred to OnLoad()");
@@ -157,7 +157,7 @@ namespace Loupedeck.HomeAssistantPlugin
         /// <returns>Bitmap image showing an area icon.</returns>
         protected override BitmapImage GetCommandImage(ActionEditorActionParameters parameters, Int32 width, Int32 height) =>
             // Show area icon for area-based control
-            this._icons.Get(IconId.Area);
+            this._icons.Get(IconId.Cover);
 
         /// <summary>
         /// Loads the action and initializes service dependencies using modern dependency injection pattern.

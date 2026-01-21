@@ -106,13 +106,15 @@ namespace Loupedeck.HomeAssistantPlugin
             this._icons = new IconService(new Dictionary<String, String>
             {
                 { IconId.Back,        "back_icon.svg" },
-                { IconId.SwitchOn,    "switch_on_icon.svg" },    // Placeholder for open cover
-                { IconId.SwitchOff,   "switch_off_icon.svg" },   // Placeholder for close cover
+                { IconId.CoverOpen,    "cover_open_icon.svg" },    
+                { IconId.CoverClose,   "cover_close_icon.svg" },
+                { IconId.CoverStop,    "cover_stop_icon.svg" }   ,
+                { IconId.CoverTilt,    "cover_tilt_icon.svg" }   ,
                 { IconId.Retry,       "reload_icon.svg" },
                 { IconId.Issue,       "issue_status_icon.svg" },
                 { IconId.Online,      "online_status_icon.png" },
                 { IconId.Area,        "area_icon.svg" },
-                { IconId.Switch,      "switch_icon.svg" },       // Placeholder for cover icon
+                { IconId.Cover,      "cover_icon.svg" },       // Placeholder for cover icon
             });
 
             PluginLog.Info($"[CoversDynamicFolder] Constructor - this.Plugin is null: {this.Plugin == null}");
@@ -122,17 +124,14 @@ namespace Loupedeck.HomeAssistantPlugin
         public override PluginDynamicFolderNavigation GetNavigationArea(DeviceType _) =>
             PluginDynamicFolderNavigation.None;
 
-        public override String GetButtonDisplayName(PluginImageSize imageSize)
-        {
-            return "All Covers";
-        }
+        public override String GetButtonDisplayName(PluginImageSize imageSize) => "All Covers";
 
         public override BitmapImage GetButtonImage(PluginImageSize imageSize)
         {
             try
             {
                 // Use switch icon as a placeholder for covers until a dedicated cover icon is available
-                return PluginResources.ReadImage("switch_icon.svg");
+                return PluginResources.ReadImage("multiple_covers_icon.svg");
             }
             catch (Exception ex)
             {
@@ -339,7 +338,7 @@ namespace Loupedeck.HomeAssistantPlugin
             // DEVICE tiles (cover icons)
             if (actionParameter.StartsWith(PfxDevice, StringComparison.OrdinalIgnoreCase))
             {
-                return this._icons.Get(IconId.Switch); // Using switch icon as placeholder for covers
+                return this._icons.Get(IconId.Cover); // Using switch icon as placeholder for covers
             }
 
             if (actionParameter.StartsWith(CmdArea, StringComparison.OrdinalIgnoreCase))
@@ -350,37 +349,37 @@ namespace Loupedeck.HomeAssistantPlugin
             // ACTION tiles
             if (actionParameter.StartsWith(PfxActOpen, StringComparison.OrdinalIgnoreCase))
             {
-                return this._icons.Get(IconId.SwitchOn); // Using switch on icon as placeholder for open
+                return this._icons.Get(IconId.CoverOpen); // Using switch on icon as placeholder for open
             }
             
             if (actionParameter.StartsWith(PfxActClose, StringComparison.OrdinalIgnoreCase))
             {
-                return this._icons.Get(IconId.SwitchOff); // Using switch off icon as placeholder for close
+                return this._icons.Get(IconId.CoverClose); // Using switch off icon as placeholder for close
             }
             
             if (actionParameter.StartsWith(PfxActStop, StringComparison.OrdinalIgnoreCase))
             {
-                return this._icons.Get(IconId.Switch); // Using switch icon as placeholder for stop
+                return this._icons.Get(IconId.CoverStop); // Using switch icon as placeholder for stop
             }
             
             // TILT ACTION tiles
             if (actionParameter.StartsWith(PfxActOpenTilt, StringComparison.OrdinalIgnoreCase))
             {
-                return this._icons.Get(IconId.SwitchOn); // Using switch on icon as placeholder for tilt open
+                return this._icons.Get(IconId.CoverTilt); // Using switch on icon as placeholder for tilt open
             }
             
             if (actionParameter.StartsWith(PfxActCloseTilt, StringComparison.OrdinalIgnoreCase))
             {
-                return this._icons.Get(IconId.SwitchOff); // Using switch off icon as placeholder for tilt close
+                return this._icons.Get(IconId.CoverTilt); // Using switch off icon as placeholder for tilt close
             }
             
             if (actionParameter.StartsWith(PfxActStopTilt, StringComparison.OrdinalIgnoreCase))
             {
-                return this._icons.Get(IconId.Switch); // Using switch icon as placeholder for tilt stop
+                return this._icons.Get(IconId.CoverStop); // Using switch icon as placeholder for tilt stop
             }
 
             // Fallback for any unhandled cases - return a default icon
-            return this._icons.Get(IconId.Switch);
+            return this._icons.Get(IconId.Cover);
         }
 
         public override void RunCommand(String actionParameter)

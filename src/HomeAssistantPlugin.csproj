@@ -100,6 +100,24 @@
     <EmbeddedResource Include="Resources\icons\multiple_switches_icon.svg">
       <LogicalName>multiple_switches_icon.svg</LogicalName>
     </EmbeddedResource>
+    <EmbeddedResource Include="Resources\icons\cover_close_icon.svg">
+      <LogicalName>cover_close_icon.svg</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\icons\cover_open_icon.svg">
+      <LogicalName>cover_open_icon.svg</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\icons\cover_stop_icon.svg">
+      <LogicalName>cover_stop_icon.svg</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\icons\cover_icon.svg">
+      <LogicalName>cover_icon.svg</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\icons\cover_tilt_icon.svg">
+      <LogicalName>cover_tilt_icon.svg</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\icons\multiple_covers_icon.svg">
+      <LogicalName>multiple_covers_icon.svg</LogicalName>
+    </EmbeddedResource>
     
     <Reference Include="PluginApi">
       <HintPath>$(PluginApiDir)PluginApi.dll</HintPath>
