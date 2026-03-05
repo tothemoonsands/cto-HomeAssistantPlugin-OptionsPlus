@@ -15,6 +15,8 @@
     <CoverletOutput>./TestResults/</CoverletOutput>
     <Include>[Loupedeck.HomeAssistantPlugin]*</Include>
     <Exclude>[Loupedeck.HomeAssistantPlugin]*.Program</Exclude>
+    <PluginApiDir Condition="$(OS) == 'Windows_NT'">C:\Program Files\Logi\LogiPluginService\</PluginApiDir>
+    <PluginApiDir Condition="$(OS) != 'Windows_NT'">/Applications/Utilities/LogiPluginService.app/Contents/MonoBundle/</PluginApiDir>
   </PropertyGroup>
 
   <ItemGroup>
@@ -39,7 +41,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\HomeAssistantPlugin.csproj" />
     <Reference Include="PluginApi">
-      <HintPath>C:\Program Files\Logi\LogiPluginService\PluginApi.dll</HintPath>
+      <HintPath>$(PluginApiDir)PluginApi.dll</HintPath>
     </Reference>
   </ItemGroup>
 

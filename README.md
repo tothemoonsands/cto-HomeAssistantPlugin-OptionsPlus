@@ -337,7 +337,7 @@ The Long-Lived Token must allow:
 * **Home Assistant** with WebSocket API enabled (standard).
 * **Home Assistant Long-Lived Access Token** (Profile → Security).
 * **.NET SDK** 8.0 (recommended) to build from source.
-* Windows 10/11 (for building and running the Loupedeck plugin locally).
+* Windows 10/11 or macOS (Intel/Apple Silicon) for building and running the Loupedeck plugin locally.
 
 ---
 
